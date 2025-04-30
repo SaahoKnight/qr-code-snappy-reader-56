@@ -3,7 +3,7 @@ import React, { useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
-import { Upload, Image, Copy } from 'lucide-react';
+import { Upload, Image, Copy, ExternalLink } from 'lucide-react';
 
 const QrCodeScanner = () => {
   const [result, setResult] = useState<string | null>(null);
@@ -12,6 +12,15 @@ const QrCodeScanner = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  const isURL = (text: string): boolean => {
+    try {
+      new URL(text);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const processImage = useCallback((file: File) => {
     if (!file || !file.type.startsWith('image/')) {
@@ -139,6 +148,12 @@ const QrCodeScanner = () => {
     }
   };
 
+  const openLink = () => {
+    if (result && isURL(result)) {
+      window.open(result, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-6 p-4 w-full max-w-md mx-auto">
       <div
@@ -190,7 +205,7 @@ const QrCodeScanner = () => {
 
       {result && (
         <div className="w-full mt-2 space-y-4">
-          <div className="rounded-lg border p-4 relative">
+          <div className="rounded-lg border p-4 relative group">
             <p className="text-sm font-medium mb-1">Scanned Content:</p>
             <div className="bg-muted rounded p-3 pr-10 break-all">
               {result}
@@ -199,18 +214,22 @@ const QrCodeScanner = () => {
                 size="icon" 
                 className="absolute top-6 right-2"
                 onClick={copyToClipboard}
+                title="Copy to clipboard"
               >
                 <Copy size={16} />
               </Button>
             </div>
           </div>
-          <Button 
-            className="w-full flex items-center gap-2"
-            onClick={copyToClipboard}
-          >
-            <Copy size={18} />
-            Copy to Clipboard
-          </Button>
+          
+          {isURL(result) && (
+            <Button 
+              className="w-full flex items-center gap-2"
+              onClick={openLink}
+            >
+              <ExternalLink size={18} />
+              Open URL
+            </Button>
+          )}
         </div>
       )}
     </div>
