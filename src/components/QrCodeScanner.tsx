@@ -1,7 +1,7 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/toast';
+import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
 import { Upload, Image, Copy } from 'lucide-react';
 
@@ -31,7 +31,7 @@ const QrCodeScanner = () => {
     setPreviewUrl(url);
 
     // Read the image
-    const img = new Image();
+    const img = document.createElement('img');
     img.onload = () => {
       // Create a canvas to draw the image
       const canvas = document.createElement('canvas');
