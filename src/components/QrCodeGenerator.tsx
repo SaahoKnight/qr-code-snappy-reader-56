@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, Image, Gradient } from 'lucide-react';
+import { Download, Image, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 
@@ -124,7 +124,7 @@ const QrCodeGenerator = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Gradient size={18} />
+              <Palette size={18} />
               <Label htmlFor="gradient">Use Gradient</Label>
             </div>
             <Switch
