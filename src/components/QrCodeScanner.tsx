@@ -3,7 +3,9 @@ import React, { useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
-import { Upload, Image, Copy, ExternalLink } from 'lucide-react';
+import { Upload, Image, Copy, ExternalLink, Camera } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import QrCodeCameraScanner from './QrCodeCameraScanner';
 
 const QrCodeScanner = () => {
   const [result, setResult] = useState<string | null>(null);
@@ -11,6 +13,7 @@ const QrCodeScanner = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState('upload');
   const { toast } = useToast();
   
   const isURL = (text: string): boolean => {
@@ -154,54 +157,82 @@ const QrCodeScanner = () => {
     }
   };
 
+  const handleCameraScan = (scannedResult: string) => {
+    setResult(scannedResult);
+  };
+
   return (
     <div className="flex flex-col items-center gap-6 p-4 w-full max-w-md mx-auto">
-      <div
-        ref={dropZoneRef}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        className="drop-zone border-gray-300 w-full cursor-pointer"
-        onClick={() => fileInputRef.current?.click()}
+      <Tabs 
+        defaultValue={activeTab} 
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full"
       >
-        {previewUrl ? (
-          <div className="relative w-full">
-            <img 
-              src={previewUrl} 
-              alt="QR preview" 
-              className="w-full h-auto max-h-64 object-contain rounded-md mx-auto"
-            />
-            {isProcessing && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <>
-            <Image size={48} className="text-gray-400" />
-            <div className="space-y-2">
-              <div className="font-medium">Drag & Drop or Click to Upload</div>
-              <p className="text-sm text-muted-foreground">Upload an image containing a QR code</p>
-            </div>
-          </>
-        )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-      </div>
+        <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Upload size={18} />
+            <span>Upload</span>
+          </TabsTrigger>
+          <TabsTrigger value="camera" className="flex items-center gap-2">
+            <Camera size={18} />
+            <span>Camera</span>
+          </TabsTrigger>
+        </TabsList>
 
-      <Button 
-        onClick={() => fileInputRef.current?.click()}
-        className="w-full flex items-center gap-2"
-      >
-        <Upload size={18} />
-        Upload Image
-      </Button>
+        <TabsContent value="upload" className="mt-0">
+          <div
+            ref={dropZoneRef}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            className="drop-zone border-gray-300 w-full cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {previewUrl ? (
+              <div className="relative w-full">
+                <img 
+                  src={previewUrl} 
+                  alt="QR preview" 
+                  className="w-full h-auto max-h-64 object-contain rounded-md mx-auto"
+                />
+                {isProcessing && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+                <Image size={48} className="text-gray-400" />
+                <div className="space-y-2">
+                  <div className="font-medium">Drag & Drop or Click to Upload</div>
+                  <p className="text-sm text-muted-foreground">Upload an image containing a QR code</p>
+                </div>
+              </>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </div>
+
+          <Button 
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full flex items-center gap-2 mt-4"
+          >
+            <Upload size={18} />
+            Upload Image
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="camera" className="mt-0">
+          <QrCodeCameraScanner onScan={handleCameraScan} />
+        </TabsContent>
+      </Tabs>
 
       {result && (
         <div className="w-full mt-2 space-y-4">
