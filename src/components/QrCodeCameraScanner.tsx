@@ -116,7 +116,8 @@ const QrCodeCameraScanner = ({ onScan }: QrCodeCameraScannerProps) => {
   return (
     <div className="flex flex-col items-center gap-4 w-full">
       <div 
-        className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center"
+        className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer"
+        onClick={() => !isScanning && startCamera()}
       >
         {isScanning ? (
           <>
@@ -135,9 +136,9 @@ const QrCodeCameraScanner = ({ onScan }: QrCodeCameraScannerProps) => {
             )}
           </>
         ) : (
-          <div className="text-sm text-gray-400 flex flex-col items-center gap-2">
+          <div className="text-sm text-gray-400 flex flex-col items-center gap-2 p-8 w-full h-full hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center">
             <Camera size={48} className="text-gray-300" />
-            <p>Tap the button below to start scanning</p>
+            <p>Click here to scan QR code with camera</p>
           </div>
         )}
       </div>
