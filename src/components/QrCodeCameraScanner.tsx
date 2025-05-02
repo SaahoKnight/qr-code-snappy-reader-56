@@ -145,18 +145,6 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
           </div>
         )}
       </div>
-
-      {isStreaming && (
-        <Button 
-          onClick={stopCamera} 
-          variant="destructive"
-          size="sm"
-          className="mt-4 flex items-center gap-2"
-        >
-          <CameraOff size={18} />
-          Stop Camera
-        </Button>
-      )}
     </div>
   );
 };

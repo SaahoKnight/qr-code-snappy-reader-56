@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -241,14 +240,14 @@ const QrCodeScanner = () => {
 
       {result && (
         <div className="w-full mt-2 space-y-4">
-          <div className="rounded-lg border p-4 relative group">
+          <div className="rounded-lg border p-4 relative">
             <p className="text-sm font-medium mb-1">Scanned Content:</p>
-            <div className="bg-muted rounded p-3 pr-10 break-all">
+            <div className="bg-muted rounded p-3 pr-10 break-all relative">
               {result}
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="absolute top-6 right-2"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2"
                 onClick={copyToClipboard}
                 title="Copy to clipboard"
               >
