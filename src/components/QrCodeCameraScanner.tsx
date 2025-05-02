@@ -1,15 +1,16 @@
 
 import React, { useRef, useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
-import { Camera, CameraOff } from 'lucide-react';
+import { CameraOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface QrCodeCameraScannerProps {
   onScan: (result: string) => void;
+  isActive: boolean;
 }
 
-const QrCodeCameraScanner = ({ onScan }: QrCodeCameraScannerProps) => {
+const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -87,6 +88,19 @@ const QrCodeCameraScanner = ({ onScan }: QrCodeCameraScannerProps) => {
     return false;
   };
 
+  // Start camera when tab becomes active
+  useEffect(() => {
+    if (isActive) {
+      startCamera();
+    } else {
+      stopCamera();
+    }
+    
+    return () => {
+      stopCamera();
+    };
+  }, [isActive]);
+
   useEffect(() => {
     let animationFrame: number;
     let scanInterval: NodeJS.Timeout;
@@ -106,19 +120,9 @@ const QrCodeCameraScanner = ({ onScan }: QrCodeCameraScannerProps) => {
     };
   }, [isStreaming]);
 
-  useEffect(() => {
-    return () => {
-      // Clean up on component unmount
-      stopCamera();
-    };
-  }, []);
-
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      <div 
-        className="relative w-full aspect-video bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center cursor-pointer"
-        onClick={() => !isScanning && startCamera()}
-      >
+    <div className="flex flex-col items-center w-full">
+      <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
         {isScanning ? (
           <>
             <video 
@@ -136,30 +140,23 @@ const QrCodeCameraScanner = ({ onScan }: QrCodeCameraScannerProps) => {
             )}
           </>
         ) : (
-          <div className="text-sm text-gray-400 flex flex-col items-center gap-2 p-8 w-full h-full hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center">
-            <Camera size={48} className="text-gray-300" />
-            <p>Click here to scan QR code with camera</p>
+          <div className="text-sm text-gray-400 flex flex-col items-center gap-2 p-8 w-full h-full">
+            <p>Camera access required to scan QR code</p>
           </div>
         )}
       </div>
 
-      <Button 
-        onClick={isScanning ? stopCamera : startCamera} 
-        variant={isScanning ? "destructive" : "default"}
-        className="w-full flex items-center gap-2"
-      >
-        {isScanning ? (
-          <>
-            <CameraOff size={18} />
-            Stop Camera
-          </>
-        ) : (
-          <>
-            <Camera size={18} />
-            Start Camera
-          </>
-        )}
-      </Button>
+      {isStreaming && (
+        <Button 
+          onClick={stopCamera} 
+          variant="destructive"
+          size="sm"
+          className="mt-4 flex items-center gap-2"
+        >
+          <CameraOff size={18} />
+          Stop Camera
+        </Button>
+      )}
     </div>
   );
 };

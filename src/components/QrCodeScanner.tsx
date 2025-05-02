@@ -1,11 +1,12 @@
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
 import { Upload, Image, Copy, ExternalLink, Camera } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import QrCodeCameraScanner from './QrCodeCameraScanner';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 const QrCodeScanner = () => {
   const [result, setResult] = useState<string | null>(null);
@@ -181,44 +182,46 @@ const QrCodeScanner = () => {
         </TabsList>
 
         <TabsContent value="upload" className="mt-0">
-          <div
-            ref={dropZoneRef}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            className="drop-zone border-gray-300 w-full cursor-pointer"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {previewUrl ? (
-              <div className="relative w-full">
-                <img 
-                  src={previewUrl} 
-                  alt="QR preview" 
-                  className="w-full h-auto max-h-64 object-contain rounded-md mx-auto"
-                />
-                {isProcessing && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-md">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <>
-                <Image size={48} className="text-gray-400" />
-                <div className="space-y-2">
-                  <div className="font-medium">Drag & Drop or Click to Upload</div>
-                  <p className="text-sm text-muted-foreground">Upload an image containing a QR code</p>
+          <AspectRatio ratio={1/1} className="bg-muted rounded-md overflow-hidden">
+            <div
+              ref={dropZoneRef}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              className="drop-zone border-gray-300 w-full h-full cursor-pointer flex flex-col items-center justify-center"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {previewUrl ? (
+                <div className="relative w-full h-full">
+                  <img 
+                    src={previewUrl} 
+                    alt="QR preview" 
+                    className="w-full h-full object-contain"
+                  />
+                  {isProcessing && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+                    </div>
+                  )}
                 </div>
-              </>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
+              ) : (
+                <>
+                  <Image size={48} className="text-gray-400" />
+                  <div className="space-y-2 text-center p-4">
+                    <div className="font-medium">Drag & Drop or Click to Upload</div>
+                    <p className="text-sm text-muted-foreground">Upload an image containing a QR code</p>
+                  </div>
+                </>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+          </AspectRatio>
 
           <Button 
             onClick={() => fileInputRef.current?.click()}
@@ -230,7 +233,9 @@ const QrCodeScanner = () => {
         </TabsContent>
 
         <TabsContent value="camera" className="mt-0">
-          <QrCodeCameraScanner onScan={handleCameraScan} />
+          <AspectRatio ratio={1/1}>
+            <QrCodeCameraScanner onScan={handleCameraScan} isActive={activeTab === 'camera'} />
+          </AspectRatio>
         </TabsContent>
       </Tabs>
 
