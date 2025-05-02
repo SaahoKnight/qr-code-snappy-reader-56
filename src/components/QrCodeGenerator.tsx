@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown } from 'lucide-react';
+import { Download, ChevronDown, Clipboard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -17,8 +17,29 @@ import {
 const QrCodeGenerator = () => {
   const [text, setText] = useState('');
   const [size, setSize] = useState(200);
+  const [borderSize, setBorderSize] = useState(0);
+  const [bgColor, setBgColor] = useState('#ffffff');
+  const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
+  const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setText(text);
+      toast({
+        title: 'Content Pasted',
+        description: 'Text has been pasted from clipboard',
+      });
+    } catch (error) {
+      toast({
+        title: 'Paste Failed',
+        description: 'Unable to access clipboard content',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleDownload = () => {
     if (!text) {
@@ -75,17 +96,103 @@ const QrCodeGenerator = () => {
 
   return (
     <div className="flex flex-col items-center gap-8 p-4 w-full max-w-md mx-auto">
+      {/* QR Code at the top */}
+      <div className="w-full">
+        {text ? (
+          <div 
+            className="w-full flex justify-center" 
+            style={{ 
+              padding: `${borderSize}px`,
+              backgroundColor: borderSize > 0 ? bgColor : 'transparent' 
+            }}
+          >
+            <QRCodeCanvas
+              value={text}
+              size={size}
+              bgColor={bgColor}
+              fgColor={fgColor}
+              level="H"
+              includeMargin={false}
+            />
+          </div>
+        ) : (
+          <div 
+            className="flex items-center justify-center bg-gray-100" 
+            style={{ 
+              width: `${size}px`, 
+              height: `${size}px`,
+              margin: '0 auto'
+            }}
+          >
+            <p className="text-sm text-gray-400">Enter text to generate QR</p>
+          </div>
+        )}
+      </div>
+
+      {/* Controls */}
       <div className="w-full space-y-4">
         <div className="space-y-2">
           <Label htmlFor="qr-text">Enter text or URL</Label>
-          <Input
-            id="qr-text"
-            type="text"
-            placeholder="Enter text or paste URL"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="w-full"
-          />
+          <div className="relative">
+            <Input
+              id="qr-text"
+              ref={inputRef}
+              type="text"
+              placeholder="Enter text or paste URL"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              className="w-full pr-10"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0"
+              onClick={handlePasteFromClipboard}
+              title="Paste from clipboard"
+            >
+              <Clipboard size={18} />
+            </Button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Background Color</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={bgColor}
+                onChange={(e) => setBgColor(e.target.value)}
+                className="w-12 h-12 rounded cursor-pointer"
+                title="Select background color"
+              />
+              <Input 
+                type="text"
+                value={bgColor}
+                onChange={(e) => setBgColor(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Foreground Color</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={fgColor}
+                onChange={(e) => setFgColor(e.target.value)}
+                className="w-12 h-12 rounded cursor-pointer"
+                title="Select foreground color"
+              />
+              <Input 
+                type="text"
+                value={fgColor}
+                onChange={(e) => setFgColor(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+          </div>
         </div>
         
         <div className="space-y-2">
@@ -101,26 +208,20 @@ const QrCodeGenerator = () => {
             onValueChange={(value) => setSize(value[0])}
           />
         </div>
-      </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        {text ? (
-          <QRCodeCanvas
-            value={text}
-            size={size}
-            bgColor="#ffffff"
-            fgColor="#000000"
-            level="H"
-            includeMargin={true}
-          />
-        ) : (
-          <div 
-            className="flex items-center justify-center bg-gray-100" 
-            style={{ width: `${size}px`, height: `${size}px` }}
-          >
-            <p className="text-sm text-gray-400">Enter text to generate QR</p>
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Label htmlFor="qr-border">Border: {borderSize}px</Label>
           </div>
-        )}
+          <Slider
+            id="qr-border"
+            value={[borderSize]}
+            min={0}
+            max={50}
+            step={1}
+            onValueChange={(value) => setBorderSize(value[0])}
+          />
+        </div>
       </div>
 
       <div className="w-full flex">
