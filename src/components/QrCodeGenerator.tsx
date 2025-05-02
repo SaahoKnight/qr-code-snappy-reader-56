@@ -29,6 +29,7 @@ const QrCodeGenerator = () => {
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const handlePasteFromClipboard = async () => {
@@ -58,45 +59,34 @@ const QrCodeGenerator = () => {
       return;
     }
 
-    // Create a temporary container to hold our QR code with border
-    const tempContainer = document.createElement('div');
-    tempContainer.style.display = 'inline-block';
-    tempContainer.style.backgroundColor = bgColor;
-    tempContainer.style.padding = `${borderSize}px`;
-    document.body.appendChild(tempContainer);
+    if (!qrRef.current) return;
+
+    // Get the QR code canvas element
+    const qrCanvas = qrRef.current.querySelector('canvas');
+    if (!qrCanvas) return;
+
+    // Create a new canvas with border if needed
+    const finalCanvas = document.createElement('canvas');
+    const fullWidth = size + (borderSize * 2);
+    const fullHeight = size + (borderSize * 2);
+    finalCanvas.width = fullWidth;
+    finalCanvas.height = fullHeight;
     
-    // Create a temporary canvas for the QR code
-    const tempCanvas = document.createElement('canvas');
-    const qrSize = size;
-    tempCanvas.width = qrSize;
-    tempCanvas.height = qrSize;
-    tempContainer.appendChild(tempCanvas);
+    const ctx = finalCanvas.getContext('2d');
+    if (!ctx) return;
     
-    // Render QR code to the temporary canvas
-    const qr = new QRCodeCanvas({
-      value: text,
-      size: qrSize,
-      bgColor: bgColor,
-      fgColor: fgColor,
-      level: 'H',
-      includeMargin: false,
-    });
+    // Fill with background color (for border)
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, fullWidth, fullHeight);
     
-    // Get the canvas context and draw QR code
-    const tempCanvasContext = tempCanvas.getContext('2d');
-    if (tempCanvasContext) {
-      const qrCanvas = qr.getCanvas();
-      tempCanvasContext.drawImage(qrCanvas, 0, 0, qrSize, qrSize);
-    }
+    // Draw QR code in the center
+    ctx.drawImage(qrCanvas, borderSize, borderSize);
     
-    // Calculate full size with border
-    const fullWidth = qrSize + (borderSize * 2);
-    const fullHeight = qrSize + (borderSize * 2);
-    
-    let url, filename, mimeType;
+    // Handle download based on format
+    let url, filename;
     
     if (downloadFormat === 'svg') {
-      // For SVG we create an SVG element with border
+      // Create SVG
       const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svgEl.setAttribute('width', fullWidth.toString());
       svgEl.setAttribute('height', fullHeight.toString());
@@ -115,9 +105,9 @@ const QrCodeGenerator = () => {
       const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       img.setAttribute('x', borderSize.toString());
       img.setAttribute('y', borderSize.toString());
-      img.setAttribute('width', qrSize.toString());
-      img.setAttribute('height', qrSize.toString());
-      img.setAttribute('href', tempCanvas.toDataURL('image/png'));
+      img.setAttribute('width', size.toString());
+      img.setAttribute('height', size.toString());
+      img.setAttribute('href', qrCanvas.toDataURL('image/png'));
       svgEl.appendChild(img);
       
       // Convert SVG to data URL
@@ -126,31 +116,11 @@ const QrCodeGenerator = () => {
       const svgBlob = new Blob([svgStr], { type: 'image/svg+xml' });
       url = URL.createObjectURL(svgBlob);
       filename = `qrcode-${new Date().getTime()}.svg`;
-      mimeType = 'image/svg+xml';
     } else {
-      // For PNG, create a new canvas with the border
-      const finalCanvas = document.createElement('canvas');
-      finalCanvas.width = fullWidth;
-      finalCanvas.height = fullHeight;
-      const ctx = finalCanvas.getContext('2d');
-      
-      if (ctx) {
-        // Fill with background color (for border)
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, fullWidth, fullHeight);
-        
-        // Draw QR code in the center
-        ctx.drawImage(tempCanvas, borderSize, borderSize);
-        
-        // Convert to data URL
-        url = finalCanvas.toDataURL('image/png');
-        filename = `qrcode-${new Date().getTime()}.png`;
-        mimeType = 'image/png';
-      }
+      // For PNG, use the canvas we already created
+      url = finalCanvas.toDataURL('image/png');
+      filename = `qrcode-${new Date().getTime()}.png`;
     }
-    
-    // Clean up temporary elements
-    document.body.removeChild(tempContainer);
     
     // Download the image
     if (url) {
@@ -183,7 +153,7 @@ const QrCodeGenerator = () => {
     <div className="flex flex-col items-center gap-8 p-4 w-full max-w-md mx-auto">
       {/* QR Code at the top */}
       <div className="w-full flex justify-center">
-        <div style={qrContainerStyle}>
+        <div style={qrContainerStyle} ref={qrRef}>
           {text ? (
             <QRCodeCanvas
               value={text}
