@@ -8,7 +8,7 @@ import { QrCode, Image } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('generate');
+  const [activeTab, setActiveTab] = useState('scan');
 
   return (
     <div className="min-h-screen flex flex-col items-center p-4 sm:p-8">
@@ -20,29 +20,29 @@ const Index = () => {
 
         <Card className="border shadow-sm">
           <Tabs 
-            defaultValue="generate" 
+            defaultValue="scan" 
             value={activeTab} 
             onValueChange={setActiveTab}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="generate" className="flex items-center gap-2">
-                <QrCode size={18} />
-                <span>Generate</span>
-              </TabsTrigger>
               <TabsTrigger value="scan" className="flex items-center gap-2">
                 <Image size={18} />
                 <span>Scan</span>
               </TabsTrigger>
+              <TabsTrigger value="generate" className="flex items-center gap-2">
+                <QrCode size={18} />
+                <span>Generate</span>
+              </TabsTrigger>
             </TabsList>
             
             <CardContent>
-              <TabsContent value="generate" className="mt-0">
-                <QrCodeGenerator />
-              </TabsContent>
-              
               <TabsContent value="scan" className="mt-0">
                 <QrCodeScanner />
+              </TabsContent>
+              
+              <TabsContent value="generate" className="mt-0">
+                <QrCodeGenerator />
               </TabsContent>
             </CardContent>
           </Tabs>

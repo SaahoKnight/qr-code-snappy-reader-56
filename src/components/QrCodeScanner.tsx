@@ -13,7 +13,7 @@ const QrCodeScanner = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
-  const [activeTab, setActiveTab] = useState('upload');
+  const [activeTab, setActiveTab] = useState('camera');
   const { toast } = useToast();
   
   const isURL = (text: string): boolean => {
@@ -170,15 +170,21 @@ const QrCodeScanner = () => {
         className="w-full"
       >
         <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="upload" className="flex items-center gap-2">
-            <Upload size={18} />
-            <span>Upload</span>
-          </TabsTrigger>
           <TabsTrigger value="camera" className="flex items-center gap-2">
             <Camera size={18} />
             <span>Camera</span>
           </TabsTrigger>
+          <TabsTrigger value="upload" className="flex items-center gap-2">
+            <Upload size={18} />
+            <span>Upload</span>
+          </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="camera" className="mt-0">
+          <AspectRatio ratio={1/1}>
+            <QrCodeCameraScanner onScan={handleCameraScan} isActive={activeTab === 'camera'} />
+          </AspectRatio>
+        </TabsContent>
 
         <TabsContent value="upload" className="mt-0">
           <AspectRatio ratio={1/1} className="bg-muted rounded-md overflow-hidden">
@@ -229,12 +235,6 @@ const QrCodeScanner = () => {
             <Upload size={18} />
             Upload Image
           </Button>
-        </TabsContent>
-
-        <TabsContent value="camera" className="mt-0">
-          <AspectRatio ratio={1/1}>
-            <QrCodeCameraScanner onScan={handleCameraScan} isActive={activeTab === 'camera'} />
-          </AspectRatio>
         </TabsContent>
       </Tabs>
 
