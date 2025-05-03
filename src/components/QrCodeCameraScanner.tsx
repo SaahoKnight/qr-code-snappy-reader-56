@@ -102,6 +102,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
       
       onScan(code.data);
       stopCamera();
+      setIsScanning(false); // Add this line to properly update scanning state
       toast({
         title: 'QR Code Detected!',
         description: 'Successfully scanned the QR code.',
@@ -188,7 +189,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
           
           {/* Bottom-end: Scan Again button */}
           <Button 
-            variant="primary"
+            variant="default"
             size="sm"
             className="absolute bottom-2 right-2 shadow-sm"
             onClick={handleScanAgain}
