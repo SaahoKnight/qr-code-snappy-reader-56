@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import QrCodeGenerator from '@/components/QrCodeGenerator';
 import QrCodeScanner from '@/components/QrCodeScanner';
 import { QrCode, Image } from 'lucide-react';
-import { Toaster } from '@/components/ui/toaster';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('scan');
@@ -52,7 +51,6 @@ const Index = () => {
           <p>Create and scan QR codes instantly</p>
         </footer>
       </div>
-      <Toaster />
     </div>
   );
 };

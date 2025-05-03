@@ -247,7 +247,7 @@ const QrCodeScanner = () => {
               <Button 
                 variant="ghost" 
                 size="icon" 
-                className="absolute right-1 top-1/2 transform -translate-y-1/2"
+                className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center"
                 onClick={copyToClipboard}
                 title="Copy to clipboard"
               >
