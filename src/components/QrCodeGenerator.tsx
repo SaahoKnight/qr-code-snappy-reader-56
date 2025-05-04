@@ -1,11 +1,10 @@
-
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Palette, FileJpg, FilePdf, FileImage } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Palette, Image, FileText, FileImage } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -244,9 +243,9 @@ const QrCodeGenerator = () => {
   const getFormatIcon = () => {
     switch (downloadFormat) {
       case 'jpg':
-        return <FileJpg size={16} />;
+        return <Image size={16} />;
       case 'pdf':
-        return <FilePdf size={16} />;
+        return <FileText size={16} />;
       case 'svg':
         return <FileImage size={16} />;
       default:
@@ -430,7 +429,7 @@ const QrCodeGenerator = () => {
               PNG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('jpg')}>
-              <FileJpg size={16} className="mr-2" />
+              <Image size={16} className="mr-2" />
               JPG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
@@ -438,7 +437,7 @@ const QrCodeGenerator = () => {
               SVG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
-              <FilePdf size={16} className="mr-2" />
+              <FileText size={16} className="mr-2" />
               PDF
             </DropdownMenuItem>
           </DropdownMenuContent>
