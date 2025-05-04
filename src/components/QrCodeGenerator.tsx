@@ -18,6 +18,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Card } from "@/components/ui/card";
+import jsPDF from 'jspdf';
 
 const QrCodeGenerator = () => {
   const [text, setText] = useState('');
@@ -129,90 +130,63 @@ const QrCodeGenerator = () => {
       url = finalCanvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
       filename = `qrcode-${new Date().getTime()}.jpg`;
     } else if (downloadFormat === 'pdf') {
-      // For PDF, we'll use a different approach
-      // Create a temporary iframe to generate PDF
-      const printFrame = document.createElement('iframe');
-      printFrame.style.position = 'absolute';
-      printFrame.style.top = '-1000px';
-      printFrame.style.left = '-1000px';
-      document.body.appendChild(printFrame);
-      
-      // Create content for the PDF
-      const pdfContent = `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>QR Code</title>
-            <style>
-              body {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                height: 100vh;
-                margin: 0;
-              }
-              .qr-container {
-                text-align: center;
-              }
-              .qr-value {
-                margin-top: 20px;
-                font-family: Arial, sans-serif;
-                word-break: break-all;
-                max-width: 400px;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="qr-container">
-              <img src="${finalCanvas.toDataURL()}" width="${fullWidth}" height="${fullHeight}" style="max-width: 100%;" />
-              <p class="qr-value">${text}</p>
-            </div>
-          </body>
-        </html>
-      `;
-      
-      printFrame.onload = () => {
-        try {
-          // Access the iframe document
-          const doc = printFrame.contentDocument;
-          if (doc) {
-            // Open the print dialog
-            const win = printFrame.contentWindow;
-            if (win) {
-              win.focus();
-              win.print();
-              
-              // Inform the user
-              toast({
-                title: 'PDF Download',
-                description: 'Save as PDF in the print dialog that opens.'
-              });
-            }
-          }
-          
-          // Cleanup after a delay to ensure the print dialog has time to open
-          setTimeout(() => {
-            document.body.removeChild(printFrame);
-          }, 2000);
-        } catch (error) {
-          console.error('Error creating PDF:', error);
-          toast({
-            title: 'Error',
-            description: 'Could not create PDF. Please try another format.',
-            variant: 'destructive'
-          });
-        }
-      };
-      
-      // Write content to iframe
-      const doc = printFrame.contentDocument;
-      if (doc) {
-        doc.open();
-        doc.write(pdfContent);
-        doc.close();
+      // Generate PDF directly instead of using print dialog
+      try {
+        // Create new PDF document
+        // Use A4 size in portrait and mm units
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+        
+        // A4 size is 210x297mm
+        // Calculate optimal positioning to center the QR code
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        // Convert canvas to data URL
+        const imgData = finalCanvas.toDataURL('image/png');
+        
+        // Calculate QR code size for PDF (max 70% of page width)
+        const qrSizeInPdf = Math.min(pageWidth * 0.7, 150);
+        
+        // Center QR on page
+        const xPos = (pageWidth - qrSizeInPdf) / 2;
+        const yPos = 40; // Some margin from the top
+        
+        // Add the QR code image
+        pdf.addImage(imgData, 'PNG', xPos, yPos, qrSizeInPdf, qrSizeInPdf);
+        
+        // Add text content below the QR code
+        pdf.setFontSize(12);
+        
+        // Add title
+        pdf.setFont(undefined, 'bold');
+        pdf.text('QR Code Content:', xPos, yPos + qrSizeInPdf + 15);
+        
+        // Add the actual text content with word wrapping
+        pdf.setFont(undefined, 'normal');
+        const splitText = pdf.splitTextToSize(text, pageWidth - 40); // 20mm margins on each side
+        pdf.text(splitText, xPos, yPos + qrSizeInPdf + 25);
+        
+        // Save the PDF
+        pdf.save(`qrcode-${new Date().getTime()}.pdf`);
+        
+        toast({
+          title: 'QR Code Downloaded!',
+          description: 'Your QR code has been downloaded as PDF.'
+        });
+      } catch (error) {
+        console.error('Error creating PDF:', error);
+        toast({
+          title: 'Error',
+          description: 'Could not create PDF. Please try another format.',
+          variant: 'destructive'
+        });
       }
       
-      // Return early as we're handling the download differently
+      // Return early as we've handled the PDF generation
       return;
     } else {
       // Default PNG format
