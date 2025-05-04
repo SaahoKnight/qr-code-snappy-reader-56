@@ -79,7 +79,12 @@ const QrCodeGenerator = () => {
     ctx.fillRect(0, 0, fullWidth, fullHeight);
     
     // Draw QR code in the center
-    ctx.drawImage(qrCanvas, borderSize, borderSize);
+    // We need to explicitly set the dimensions when drawing the image to prevent cropping
+    ctx.drawImage(
+      qrCanvas, 
+      0, 0, qrCanvas.width, qrCanvas.height,  // Source rectangle
+      borderSize, borderSize, size, size      // Destination rectangle
+    );
     
     // Handle download based on format
     let url, filename;
@@ -106,7 +111,10 @@ const QrCodeGenerator = () => {
       img.setAttribute('y', borderSize.toString());
       img.setAttribute('width', size.toString());
       img.setAttribute('height', size.toString());
-      img.setAttribute('href', qrCanvas.toDataURL('image/png'));
+      
+      // Make sure we get the full QR code in the proper size
+      const dataUrl = qrCanvas.toDataURL('image/png');
+      img.setAttribute('href', dataUrl);
       svgEl.appendChild(img);
       
       // Convert SVG to data URL
@@ -156,7 +164,7 @@ const QrCodeGenerator = () => {
           </head>
           <body>
             <div class="qr-container">
-              <img src="${finalCanvas.toDataURL()}" width="${fullWidth}" height="${fullHeight}" />
+              <img src="${finalCanvas.toDataURL()}" width="${fullWidth}" height="${fullHeight}" style="max-width: 100%;" />
               <p class="qr-value">${text}</p>
             </div>
           </body>
