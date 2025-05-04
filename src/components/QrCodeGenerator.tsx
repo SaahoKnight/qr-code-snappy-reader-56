@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Palette } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Palette, FileJpg, FilePdf, FileImage } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -116,13 +116,104 @@ const QrCodeGenerator = () => {
       const svgBlob = new Blob([svgStr], { type: 'image/svg+xml' });
       url = URL.createObjectURL(svgBlob);
       filename = `qrcode-${new Date().getTime()}.svg`;
+    } else if (downloadFormat === 'jpg') {
+      // For JPG, use the canvas we already created
+      // JPG doesn't support transparency, so we need to ensure the background is filled
+      url = finalCanvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
+      filename = `qrcode-${new Date().getTime()}.jpg`;
+    } else if (downloadFormat === 'pdf') {
+      // For PDF, we'll use a different approach
+      // Create a temporary iframe to generate PDF
+      const printFrame = document.createElement('iframe');
+      printFrame.style.position = 'absolute';
+      printFrame.style.top = '-1000px';
+      printFrame.style.left = '-1000px';
+      document.body.appendChild(printFrame);
+      
+      // Create content for the PDF
+      const pdfContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>QR Code</title>
+            <style>
+              body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+              }
+              .qr-container {
+                text-align: center;
+              }
+              .qr-value {
+                margin-top: 20px;
+                font-family: Arial, sans-serif;
+                word-break: break-all;
+                max-width: 400px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="qr-container">
+              <img src="${finalCanvas.toDataURL()}" width="${fullWidth}" height="${fullHeight}" />
+              <p class="qr-value">${text}</p>
+            </div>
+          </body>
+        </html>
+      `;
+      
+      printFrame.onload = () => {
+        try {
+          // Access the iframe document
+          const doc = printFrame.contentDocument;
+          if (doc) {
+            // Open the print dialog
+            const win = printFrame.contentWindow;
+            if (win) {
+              win.focus();
+              win.print();
+              
+              // Inform the user
+              toast({
+                title: 'PDF Download',
+                description: 'Save as PDF in the print dialog that opens.'
+              });
+            }
+          }
+          
+          // Cleanup after a delay to ensure the print dialog has time to open
+          setTimeout(() => {
+            document.body.removeChild(printFrame);
+          }, 2000);
+        } catch (error) {
+          console.error('Error creating PDF:', error);
+          toast({
+            title: 'Error',
+            description: 'Could not create PDF. Please try another format.',
+            variant: 'destructive'
+          });
+        }
+      };
+      
+      // Write content to iframe
+      const doc = printFrame.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(pdfContent);
+        doc.close();
+      }
+      
+      // Return early as we're handling the download differently
+      return;
     } else {
-      // For PNG, use the canvas we already created
+      // Default PNG format
       url = finalCanvas.toDataURL('image/png');
       filename = `qrcode-${new Date().getTime()}.png`;
     }
     
-    // Download the image
+    // Download the image (for non-PDF formats)
     if (url) {
       const link = document.createElement('a');
       link.download = filename;
@@ -147,6 +238,20 @@ const QrCodeGenerator = () => {
     alignItems: 'center',
     padding: `${borderSize}px`,
     backgroundColor: borderSize > 0 ? bgColor : 'transparent'
+  };
+
+  // Helper to get the appropriate icon for the selected format
+  const getFormatIcon = () => {
+    switch (downloadFormat) {
+      case 'jpg':
+        return <FileJpg size={16} />;
+      case 'pdf':
+        return <FilePdf size={16} />;
+      case 'svg':
+        return <FileImage size={16} />;
+      default:
+        return <FileImage size={16} />;
+    }
   };
 
   return (
@@ -311,17 +416,30 @@ const QrCodeGenerator = () => {
                 variant="default"
                 disabled={!text}
               >
-                <span className="mr-1">{downloadFormat.toUpperCase()}</span>
+                <span className="mr-1 flex items-center gap-1">
+                  {getFormatIcon()}
+                  {downloadFormat.toUpperCase()}
+                </span>
                 <ChevronDown size={16} />
               </Button>
             </DropdownMenuTrigger>
           </div>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setDownloadFormat('png')}>
+              <FileImage size={16} className="mr-2" />
               PNG
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDownloadFormat('jpg')}>
+              <FileJpg size={16} className="mr-2" />
+              JPG
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
+              <FileImage size={16} className="mr-2" />
               SVG
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
+              <FilePdf size={16} className="mr-2" />
+              PDF
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
