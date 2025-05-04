@@ -67,24 +67,21 @@ const QrCodeGenerator = () => {
 
     // Create a new canvas with border if needed
     const finalCanvas = document.createElement('canvas');
-    const fullWidth = size + (borderSize * 2);
-    const fullHeight = size + (borderSize * 2);
-    finalCanvas.width = fullWidth;
-    finalCanvas.height = fullHeight;
+    const finalSize = size + (borderSize * 2);
+    finalCanvas.width = finalSize;
+    finalCanvas.height = finalSize;
     
     const ctx = finalCanvas.getContext('2d');
     if (!ctx) return;
     
     // Fill with background color (for border)
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, fullWidth, fullHeight);
+    ctx.fillRect(0, 0, finalSize, finalSize);
     
     // Draw QR code in the center
-    // We need to explicitly set the dimensions when drawing the image to prevent cropping
     ctx.drawImage(
       qrCanvas, 
-      0, 0, qrCanvas.width, qrCanvas.height,  // Source rectangle
-      borderSize, borderSize, size, size      // Destination rectangle
+      borderSize, borderSize, size, size
     );
     
     // Handle download based on format
@@ -93,18 +90,16 @@ const QrCodeGenerator = () => {
     if (downloadFormat === 'svg') {
       // Create SVG
       const svgEl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svgEl.setAttribute('width', fullWidth.toString());
-      svgEl.setAttribute('height', fullHeight.toString());
-      svgEl.setAttribute('viewBox', `0 0 ${fullWidth} ${fullHeight}`);
+      svgEl.setAttribute('width', finalSize.toString());
+      svgEl.setAttribute('height', finalSize.toString());
+      svgEl.setAttribute('viewBox', `0 0 ${finalSize} ${finalSize}`);
       
       // Add background rect for the border
-      if (borderSize > 0) {
-        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        bgRect.setAttribute('width', fullWidth.toString());
-        bgRect.setAttribute('height', fullHeight.toString());
-        bgRect.setAttribute('fill', bgColor);
-        svgEl.appendChild(bgRect);
-      }
+      const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bgRect.setAttribute('width', finalSize.toString());
+      bgRect.setAttribute('height', finalSize.toString());
+      bgRect.setAttribute('fill', bgColor);
+      svgEl.appendChild(bgRect);
       
       // Add QR code as image centered within border
       const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
@@ -113,7 +108,7 @@ const QrCodeGenerator = () => {
       img.setAttribute('width', size.toString());
       img.setAttribute('height', size.toString());
       
-      // Make sure we get the full QR code in the proper size
+      // Make sure we get the full QR code
       const dataUrl = qrCanvas.toDataURL('image/png');
       img.setAttribute('href', dataUrl);
       svgEl.appendChild(img);
@@ -130,10 +125,9 @@ const QrCodeGenerator = () => {
       url = finalCanvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
       filename = `qrcode-${new Date().getTime()}.jpg`;
     } else if (downloadFormat === 'pdf') {
-      // Generate PDF directly instead of using print dialog
+      // Generate PDF directly
       try {
         // Create new PDF document
-        // Use A4 size in portrait and mm units
         const pdf = new jsPDF({
           orientation: 'portrait',
           unit: 'mm',
@@ -141,7 +135,6 @@ const QrCodeGenerator = () => {
         });
         
         // A4 size is 210x297mm
-        // Calculate optimal positioning to center the QR code
         const pageWidth = pdf.internal.pageSize.getWidth();
         const pageHeight = pdf.internal.pageSize.getHeight();
         
@@ -167,7 +160,7 @@ const QrCodeGenerator = () => {
         
         // Add the actual text content with word wrapping
         pdf.setFont(undefined, 'normal');
-        const splitText = pdf.splitTextToSize(text, pageWidth - 40); // 20mm margins on each side
+        const splitText = pdf.splitTextToSize(text, pageWidth - 40);
         pdf.text(splitText, xPos, yPos + qrSizeInPdf + 25);
         
         // Save the PDF
@@ -208,17 +201,24 @@ const QrCodeGenerator = () => {
     }
   };
 
-  // CSS for square aspect ratio container
+  // Update the container style to properly show the border as padding
   const qrContainerStyle = {
-    aspectRatio: '1 / 1',
-    width: '100%',
-    maxWidth: '300px',
-    margin: '0 auto',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    width: '100%',
+    maxWidth: '300px',
+    margin: '0 auto',
+    aspectRatio: '1 / 1',
+  };
+
+  // Create a separate style for the QR code wrapper with the border
+  const qrWrapperStyle = {
     padding: `${borderSize}px`,
-    backgroundColor: borderSize > 0 ? bgColor : 'transparent'
+    backgroundColor: bgColor,
+    display: 'inline-flex',
+    justifyContent: 'center',
+    alignItems: 'center'
   };
 
   // Helper to get the appropriate icon for the selected format
@@ -238,8 +238,8 @@ const QrCodeGenerator = () => {
   return (
     <div className="flex flex-col items-center gap-8 p-4 w-full max-w-md mx-auto">
       {/* QR Code at the top */}
-      <div className="w-full flex justify-center">
-        <div style={qrContainerStyle} ref={qrRef}>
+      <div style={qrContainerStyle} ref={qrRef}>
+        <div style={qrWrapperStyle}>
           {text ? (
             <QRCodeCanvas
               value={text}
@@ -250,7 +250,7 @@ const QrCodeGenerator = () => {
               includeMargin={false}
             />
           ) : (
-            <div className="flex items-center justify-center bg-gray-100 w-full h-full">
+            <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
               <p className="text-sm text-gray-400">Enter text to generate QR</p>
             </div>
           )}
