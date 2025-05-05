@@ -1,163 +1,17 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import jsQR from 'jsqr';
-import { Upload, Image, Copy, ExternalLink, Camera } from 'lucide-react';
+
+import React, { useState } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import QrCodeCameraScanner from './QrCodeCameraScanner';
+import { Upload, Camera } from 'lucide-react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import QrCodeCameraScanner from './QrCodeCameraScanner';
+import QrCodeUploader from './QrCodeUploader';
+import QrCodeResult from './QrCodeResult';
 
 const QrCodeScanner = () => {
   const [result, setResult] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const dropZoneRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState('camera');
-  const { toast } = useToast();
-  
-  const isURL = (text: string): boolean => {
-    try {
-      new URL(text);
-      return true;
-    } catch {
-      return false;
-    }
-  };
 
-  const processImage = useCallback((file: File) => {
-    if (!file || !file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid File',
-        description: 'Please select a valid image file.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    setResult(null);
-    
-    // Create a preview URL
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-
-    // Read the image
-    const img = document.createElement('img');
-    img.onload = () => {
-      // Create a canvas to draw the image
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      if (!ctx) {
-        setIsProcessing(false);
-        toast({
-          title: 'Error',
-          description: 'Could not process image.',
-          variant: 'destructive',
-        });
-        return;
-      }
-      
-      // Set canvas dimensions to image dimensions
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      // Draw the image to the canvas
-      ctx.drawImage(img, 0, 0);
-      
-      // Get image data from the canvas
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      
-      // Use jsQR to detect QR code
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-      
-      if (code) {
-        setResult(code.data);
-        toast({
-          title: 'QR Code Detected!',
-          description: 'Successfully scanned the QR code.',
-        });
-      } else {
-        toast({
-          title: 'No QR Code Found',
-          description: 'Could not detect a QR code in this image.',
-          variant: 'destructive',
-        });
-      }
-      
-      setIsProcessing(false);
-    };
-    
-    img.onerror = () => {
-      setIsProcessing(false);
-      toast({
-        title: 'Error',
-        description: 'Could not load the image.',
-        variant: 'destructive',
-      });
-    };
-    
-    img.src = url;
-  }, [toast]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processImage(file);
-    }
-  };
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    
-    if (dropZoneRef.current) {
-      dropZoneRef.current.classList.remove('drag-active');
-    }
-    
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processImage(file);
-    }
-  }, [processImage]);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    if (dropZoneRef.current) {
-      dropZoneRef.current.classList.add('drag-active');
-    }
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    if (dropZoneRef.current) {
-      dropZoneRef.current.classList.remove('drag-active');
-    }
-  }, []);
-
-  const copyToClipboard = () => {
-    if (result) {
-      navigator.clipboard.writeText(result).then(() => {
-        toast({
-          title: 'Copied!',
-          description: 'QR code content has been copied to clipboard.'
-        });
-      }, () => {
-        toast({
-          title: 'Error',
-          description: 'Failed to copy to clipboard.',
-          variant: 'destructive',
-        });
-      });
-    }
-  };
-
-  const openLink = () => {
-    if (result && isURL(result)) {
-      window.open(result, '_blank', 'noopener,noreferrer');
-    }
-  };
-
-  const handleCameraScan = (scannedResult: string) => {
+  const handleScan = (scannedResult: string) => {
     setResult(scannedResult);
   };
 
@@ -182,91 +36,16 @@ const QrCodeScanner = () => {
 
         <TabsContent value="camera" className="mt-0">
           <AspectRatio ratio={1/1}>
-            <QrCodeCameraScanner onScan={handleCameraScan} isActive={activeTab === 'camera'} />
+            <QrCodeCameraScanner onScan={handleScan} isActive={activeTab === 'camera'} />
           </AspectRatio>
         </TabsContent>
 
         <TabsContent value="upload" className="mt-0">
-          <AspectRatio ratio={1/1} className="bg-muted rounded-md overflow-hidden">
-            <div
-              ref={dropZoneRef}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              className="drop-zone border-gray-300 w-full h-full cursor-pointer flex flex-col items-center justify-center"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {previewUrl ? (
-                <div className="relative w-full h-full">
-                  <img 
-                    src={previewUrl} 
-                    alt="QR preview" 
-                    className="w-full h-full object-contain"
-                  />
-                  {isProcessing && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <Image size={48} className="text-gray-400" />
-                  <div className="space-y-2 text-center p-4">
-                    <div className="font-medium">Drag & Drop or Click to Upload</div>
-                    <p className="text-sm text-muted-foreground">Upload an image containing a QR code</p>
-                  </div>
-                </>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
-          </AspectRatio>
-
-          <Button 
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full flex items-center gap-2 mt-4"
-          >
-            <Upload size={18} />
-            Upload Image
-          </Button>
+          <QrCodeUploader onScan={handleScan} />
         </TabsContent>
       </Tabs>
 
-      {result && (
-        <div className="w-full mt-2 space-y-4">
-          <div className="rounded-lg border p-4 relative">
-            <p className="text-sm font-medium mb-1">Scanned Content:</p>
-            <div className="bg-muted rounded p-3 pr-10 break-all relative">
-              {result}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center justify-center"
-                onClick={copyToClipboard}
-                title="Copy to clipboard"
-              >
-                <Copy size={16} />
-              </Button>
-            </div>
-          </div>
-          
-          {isURL(result) && (
-            <Button 
-              className="w-full flex items-center gap-2"
-              onClick={openLink}
-            >
-              <ExternalLink size={18} />
-              Open URL
-            </Button>
-          )}
-        </div>
-      )}
+      <QrCodeResult result={result} />
     </div>
   );
 };
