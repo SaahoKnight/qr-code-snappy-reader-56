@@ -53,6 +53,24 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     setIsScanning(false);
   };
 
+  // Process image data to detect QR code
+  const processImageData = (imageData: ImageData) => {
+    // Use jsQR to detect QR code in image data
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    
+    if (code) {
+      onScan(code.data);
+      stopCamera();
+      toast({
+        title: 'QR Code Detected!',
+        description: 'Successfully scanned the QR code.',
+      });
+      return true;
+    }
+    
+    return false;
+  };
+
   const scanQRCode = () => {
     if (!videoRef.current || !canvasRef.current || !isStreaming) return;
     
@@ -72,20 +90,8 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     // Get image data from the canvas
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     
-    // Use jsQR to detect QR code
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
-    
-    if (code) {
-      onScan(code.data);
-      stopCamera();
-      toast({
-        title: 'QR Code Detected!',
-        description: 'Successfully scanned the QR code.',
-      });
-      return true;
-    }
-    
-    return false;
+    // Process the image data to detect QR code
+    return processImageData(imageData);
   };
 
   // Start camera when tab becomes active
@@ -106,12 +112,12 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     let scanInterval: NodeJS.Timeout;
 
     if (isStreaming) {
-      // Set up continuous scanning
+      // Set up continuous scanning with reduced interval (250ms)
       scanInterval = setInterval(() => {
         animationFrame = requestAnimationFrame(() => {
           scanQRCode();
         });
-      }, 500); // Scan every 500ms
+      }, 250); // Scan every 250ms for better detection
     }
 
     return () => {
