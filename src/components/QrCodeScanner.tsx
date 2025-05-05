@@ -20,7 +20,7 @@ const QrCodeScanner = () => {
   const isURL = (text: string): boolean => {
     try {
       // Fix: Pass a string to the URL constructor
-      new URL(text);
+      new URL(text || ''); // Added a default empty string parameter
       return true;
     } catch {
       return false;
