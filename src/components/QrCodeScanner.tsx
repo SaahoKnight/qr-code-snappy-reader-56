@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +19,7 @@ const QrCodeScanner = () => {
   
   const isURL = (text: string): boolean => {
     try {
+      // Fix: Pass a string to the URL constructor
       new URL(text);
       return true;
     } catch {
