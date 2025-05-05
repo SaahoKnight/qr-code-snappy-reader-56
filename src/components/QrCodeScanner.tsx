@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -136,24 +135,44 @@ const QrCodeScanner = () => {
             canvas.width = 1000; // Default width for PDF rendering
             canvas.height = 1000; // Default height for PDF rendering
             
-            // Draw the PDF content to canvas
-            ctx.drawImage(iframeWindow.document.body, 0, 0, canvas.width, canvas.height);
+            // Fix: Use proper CanvasImageSource element for drawing
+            // We can't draw the document.body directly, so let's attempt to render
+            // the PDF content by getting an image from the iframe
+            const pdfImage = new Image();
+            pdfImage.onload = () => {
+              // Draw the image to canvas
+              ctx.drawImage(pdfImage, 0, 0, canvas.width, canvas.height);
+              
+              // Get image data from the canvas
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              
+              // Process the image data
+              if (!processImageData(imageData)) {
+                toast({
+                  title: 'No QR Code Found',
+                  description: 'Could not detect a QR code in the first page of this PDF.',
+                  variant: 'destructive',
+                });
+              }
+              
+              // Clean up
+              document.body.removeChild(iframe);
+              setIsProcessing(false);
+            };
             
-            // Get image data from the canvas
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // Process the image data
-            if (!processImageData(imageData)) {
-              toast({
-                title: 'No QR Code Found',
-                description: 'Could not detect a QR code in the first page of this PDF.',
-                variant: 'destructive',
-              });
-            }
-            
-            // Clean up
-            document.body.removeChild(iframe);
-            setIsProcessing(false);
+            // Attempt to convert iframe content to an image
+            // Use a data URL of the content
+            const iframeContent = iframeWindow.document.documentElement.outerHTML;
+            const blob = new Blob([iframeContent], {type: 'text/html'});
+            const reader = new FileReader();
+            reader.onload = () => {
+              if (reader.result) {
+                pdfImage.src = reader.result.toString();
+              } else {
+                throw new Error("Couldn't read iframe content");
+              }
+            };
+            reader.readAsDataURL(blob);
           } catch (error) {
             document.body.removeChild(iframe);
             setIsProcessing(false);
