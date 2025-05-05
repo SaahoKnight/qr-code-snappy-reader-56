@@ -6,7 +6,6 @@ import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Download, ChevronDown, Clipboard, Palette, Image, FileText, FileImage } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +31,6 @@ const QrCodeGenerator = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-  const isMobile = useIsMobile();
 
   const handlePasteFromClipboard = async () => {
     try {
@@ -284,7 +282,7 @@ const QrCodeGenerator = () => {
         </div>
       </div>
       
-      {/* Customize Collapsible - Updated to remove inner border */}
+      {/* Customize Collapsible */}
       <Collapsible 
         open={isCustomizeOpen} 
         onOpenChange={setIsCustomizeOpen}
@@ -306,10 +304,9 @@ const QrCodeGenerator = () => {
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="p-4 border-t bg-background">
-          {/* Removed the Card wrapper to eliminate the inner border */}
-          <div className="space-y-6">
-            {/* Colors Selection - Updated for responsive layout */}
-            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+          <Card className="p-4 space-y-6">
+            {/* Colors Selection */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Background Color</Label>
                 <div className="flex items-center gap-2">
@@ -317,7 +314,7 @@ const QrCodeGenerator = () => {
                     type="color"
                     value={bgColor}
                     onChange={(e) => setBgColor(e.target.value)}
-                    className="w-12 h-12 rounded cursor-pointer border border-input"
+                    className="w-12 h-12 rounded cursor-pointer"
                     title="Select background color"
                   />
                   <Input 
@@ -336,7 +333,7 @@ const QrCodeGenerator = () => {
                     type="color"
                     value={fgColor}
                     onChange={(e) => setFgColor(e.target.value)}
-                    className="w-12 h-12 rounded cursor-pointer border border-input"
+                    className="w-12 h-12 rounded cursor-pointer"
                     title="Select foreground color"
                   />
                   <Input 
@@ -378,7 +375,7 @@ const QrCodeGenerator = () => {
                 onValueChange={(value) => setBorderSize(value[0])}
               />
             </div>
-          </div>
+          </Card>
         </CollapsibleContent>
       </Collapsible>
 
