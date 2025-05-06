@@ -380,16 +380,16 @@ const QrCodeGenerator = () => {
       </Collapsible>
 
       {/* Download Button with Format Selection */}
-      <div className="w-full flex">
+      <div className="w-full flex justify-center">
         <DropdownMenu>
-          <div className="flex w-full">
+          <div className="flex">
             <Button 
               onClick={handleDownload} 
               className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
               disabled={!text}
             >
               <Download size={18} />
-              Download QR Code
+              Download
             </Button>
             <DropdownMenuTrigger asChild>
               <Button 
