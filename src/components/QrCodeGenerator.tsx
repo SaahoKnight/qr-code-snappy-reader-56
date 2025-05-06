@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Palette, Image, FileText, FileImage, Paste, Expand } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Palette, Image, FileText, FileImage } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -28,7 +28,6 @@ const QrCodeGenerator = () => {
   const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
-  const [isFullTextVisible, setIsFullTextVisible] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -48,10 +47,6 @@ const QrCodeGenerator = () => {
         variant: 'destructive',
       });
     }
-  };
-
-  const handleExpandToggle = () => {
-    setIsFullTextVisible(!isFullTextVisible);
   };
 
   const handleDownload = () => {
@@ -262,7 +257,7 @@ const QrCodeGenerator = () => {
         </div>
       </div>
 
-      {/* Input field with dynamic icon button */}
+      {/* Input field with paste button */}
       <div className="w-full space-y-2">
         <Label htmlFor="qr-text">Enter text or URL</Label>
         <div className="relative">
@@ -273,23 +268,18 @@ const QrCodeGenerator = () => {
             placeholder="Enter text or paste URL"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className={`w-full pr-10 ${isFullTextVisible ? 'h-auto min-h-[100px]' : ''}`}
+            className="w-full pr-10"
           />
           <Button
             variant="ghost"
             size="icon"
             className="absolute right-0 top-0"
-            onClick={text.length > 0 ? handleExpandToggle : handlePasteFromClipboard}
-            title={text.length > 0 ? "Expand/collapse text" : "Paste from clipboard"}
+            onClick={handlePasteFromClipboard}
+            title="Paste from clipboard"
           >
-            {text.length > 0 ? <Expand size={18} /> : <Paste size={18} />}
+            <Clipboard size={18} />
           </Button>
         </div>
-        {isFullTextVisible && text.length > 0 && (
-          <div className="mt-2 p-3 bg-slate-50 rounded border text-sm">
-            {text}
-          </div>
-        )}
       </div>
       
       {/* Customize Collapsible */}
