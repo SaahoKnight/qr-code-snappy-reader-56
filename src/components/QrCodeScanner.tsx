@@ -1,16 +1,23 @@
+
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
-import { Upload, Image, Copy, ExternalLink, Camera } from 'lucide-react';
+import { Upload, Image, Copy, ExternalLink, Camera, FileText, FileImage } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import QrCodeCameraScanner from './QrCodeCameraScanner';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import * as pdfjs from 'pdfjs-dist';
+import { PDFDocumentProxy } from 'pdfjs-dist';
+
+// Initialize PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const QrCodeScanner = () => {
   const [result, setResult] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fileType, setFileType] = useState<'image' | 'pdf' | 'svg' | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState('camera');
@@ -18,18 +25,128 @@ const QrCodeScanner = () => {
   
   const isURL = (text: string): boolean => {
     try {
-      new URL(text);
+      new URL(text || '');
       return true;
     } catch {
       return false;
     }
   };
 
-  const processImage = useCallback((file: File) => {
-    if (!file || !file.type.startsWith('image/')) {
+  const processSvg = async (file: File) => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+
+    return new Promise<void>((resolve, reject) => {
+      const img = document.createElement('img');
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          reject(new Error('Could not create canvas context'));
+          return;
+        }
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+          setResult(code.data);
+          toast({
+            title: 'QR Code Detected!',
+            description: 'Successfully scanned the QR code from SVG.',
+          });
+          resolve();
+        } else {
+          toast({
+            title: 'No QR Code Found',
+            description: 'Could not detect a QR code in this SVG.',
+            variant: 'destructive',
+          });
+          reject(new Error('No QR code found'));
+        }
+      };
+      
+      img.onerror = () => {
+        reject(new Error('Could not load SVG'));
+      };
+      
+      img.src = url;
+    });
+  };
+
+  const processPdf = async (file: File) => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    
+    try {
+      const pdf = await pdfjs.getDocument(url).promise;
+      let qrFound = false;
+      
+      // Process first 5 pages or all pages if less than 5
+      const pagesToProcess = Math.min(pdf.numPages, 5);
+      
+      for (let pageNum = 1; pageNum <= pagesToProcess; pageNum++) {
+        if (qrFound) break;
+        
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          throw new Error('Could not create canvas context');
+        }
+        
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        await page.render({
+          canvasContext: ctx,
+          viewport,
+        }).promise;
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+          setResult(code.data);
+          qrFound = true;
+          toast({
+            title: 'QR Code Detected!',
+            description: `Successfully scanned the QR code from page ${pageNum}.`,
+          });
+        }
+      }
+      
+      if (!qrFound) {
+        toast({
+          title: 'No QR Code Found',
+          description: 'Could not detect a QR code in the first 5 pages of this PDF.',
+          variant: 'destructive',
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      toast({
+        title: 'Error',
+        description: 'Could not process the PDF file.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const processImage = useCallback(async (file: File) => {
+    if (!file) {
       toast({
         title: 'Invalid File',
-        description: 'Please select a valid image file.',
+        description: 'Please select a valid file.',
         variant: 'destructive',
       });
       return;
@@ -38,67 +155,88 @@ const QrCodeScanner = () => {
     setIsProcessing(true);
     setResult(null);
     
-    // Create a preview URL
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    // Determine file type
+    if (file.type.startsWith('image/svg')) {
+      setFileType('svg');
+      try {
+        await processSvg(file);
+      } catch (error) {
+        console.error('Error processing SVG:', error);
+      }
+    } else if (file.type === 'application/pdf') {
+      setFileType('pdf');
+      await processPdf(file);
+    } else if (file.type.startsWith('image/')) {
+      setFileType('image');
+      // Create a preview URL
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
 
-    // Read the image
-    const img = document.createElement('img');
-    img.onload = () => {
-      // Create a canvas to draw the image
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      // Read the image
+      const img = document.createElement('img');
+      img.onload = () => {
+        // Create a canvas to draw the image
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!ctx) {
+          setIsProcessing(false);
+          toast({
+            title: 'Error',
+            description: 'Could not process image.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        // Set canvas dimensions to image dimensions
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Draw the image to the canvas
+        ctx.drawImage(img, 0, 0);
+        
+        // Get image data from the canvas
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Use jsQR to detect QR code
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        
+        if (code) {
+          setResult(code.data);
+          toast({
+            title: 'QR Code Detected!',
+            description: 'Successfully scanned the QR code.',
+          });
+        } else {
+          toast({
+            title: 'No QR Code Found',
+            description: 'Could not detect a QR code in this image.',
+            variant: 'destructive',
+          });
+        }
+        
+        setIsProcessing(false);
+      };
       
-      if (!ctx) {
+      img.onerror = () => {
         setIsProcessing(false);
         toast({
           title: 'Error',
-          description: 'Could not process image.',
+          description: 'Could not load the image.',
           variant: 'destructive',
         });
-        return;
-      }
+      };
       
-      // Set canvas dimensions to image dimensions
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      // Draw the image to the canvas
-      ctx.drawImage(img, 0, 0);
-      
-      // Get image data from the canvas
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      
-      // Use jsQR to detect QR code
-      const code = jsQR(imageData.data, imageData.width, imageData.height);
-      
-      if (code) {
-        setResult(code.data);
-        toast({
-          title: 'QR Code Detected!',
-          description: 'Successfully scanned the QR code.',
-        });
-      } else {
-        toast({
-          title: 'No QR Code Found',
-          description: 'Could not detect a QR code in this image.',
-          variant: 'destructive',
-        });
-      }
-      
-      setIsProcessing(false);
-    };
-    
-    img.onerror = () => {
+      img.src = url;
+    } else {
       setIsProcessing(false);
       toast({
-        title: 'Error',
-        description: 'Could not load the image.',
+        title: 'Unsupported File Type',
+        description: 'Please select an image, SVG or PDF file.',
         variant: 'destructive',
       });
-    };
-    
-    img.src = url;
+    }
   }, [toast]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,6 +299,12 @@ const QrCodeScanner = () => {
     setResult(scannedResult);
   };
 
+  const getFileTypeIcon = () => {
+    if (fileType === 'pdf') return <FileText size={48} className="text-gray-400" />;
+    if (fileType === 'svg') return <FileImage size={48} className="text-gray-400" />;
+    return <Image size={48} className="text-gray-400" />;
+  };
+
   return (
     <div className="flex flex-col items-center gap-6 p-4 w-full max-w-md mx-auto">
       <Tabs 
@@ -198,11 +342,18 @@ const QrCodeScanner = () => {
             >
               {previewUrl ? (
                 <div className="relative w-full h-full">
-                  <img 
-                    src={previewUrl} 
-                    alt="QR preview" 
-                    className="w-full h-full object-contain"
-                  />
+                  {fileType === 'pdf' ? (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <FileText size={64} className="text-gray-500 mb-2" />
+                      <p className="text-sm text-center text-gray-500">PDF preview</p>
+                    </div>
+                  ) : (
+                    <img 
+                      src={previewUrl} 
+                      alt="QR preview" 
+                      className="w-full h-full object-contain"
+                    />
+                  )}
                   {isProcessing && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
@@ -211,17 +362,17 @@ const QrCodeScanner = () => {
                 </div>
               ) : (
                 <>
-                  <Image size={48} className="text-gray-400" />
+                  {getFileTypeIcon()}
                   <div className="space-y-2 text-center p-4">
                     <div className="font-medium">Drag & Drop or Click to Upload</div>
-                    <p className="text-sm text-muted-foreground">Upload an image containing a QR code</p>
+                    <p className="text-sm text-muted-foreground">Upload an image, SVG or PDF containing a QR code</p>
                   </div>
                 </>
               )}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.pdf,.svg"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -233,7 +384,7 @@ const QrCodeScanner = () => {
             className="w-full flex items-center gap-2 mt-4"
           >
             <Upload size={18} />
-            Upload Image
+            Upload File
           </Button>
         </TabsContent>
       </Tabs>
