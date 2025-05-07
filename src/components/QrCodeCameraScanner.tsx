@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
-import { CameraOff, RefreshCw, Download } from 'lucide-react';
+import { CameraOff, RefreshCw, Download, ScanQrCode } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface QrCodeCameraScannerProps {
@@ -28,10 +28,9 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
       const constraints = {
         video: {
           facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          // Request higher frame rates for smoother scanning
-          frameRate: { ideal: 30 }
+          width: { ideal: 1920 }, // Higher resolution for better detection
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60 } // Higher frame rate for smoother scanning
         }
       };
       
@@ -64,43 +63,41 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     setIsStreaming(false);
   };
 
-  // Process image data to detect QR code with enhanced error handling and multiple attempts
+  // Enhanced process image data function with better QR detection
   const processImageData = (imageData: ImageData, attempt: number = 0): boolean => {
-    // Use jsQR to detect QR code in image data with increased sensitivity
-    const options = {
-      inversionAttempts: "dontInvert" as "dontInvert" | "onlyInvert" | "attemptBoth" | "invertFirst",
-    };
+    // Try multiple inversion attempts to improve detection rates
+    const inversionTypes = ["dontInvert", "onlyInvert", "attemptBoth", "invertFirst"] as const;
     
-    let code = jsQR(imageData.data, imageData.width, imageData.height, options);
-    
-    // If no code found with default inversion, try with inversion (catches more codes)
-    if (!code && attempt === 0) {
-      const invertedOptions = {
-        inversionAttempts: "invertFirst" as "dontInvert" | "onlyInvert" | "attemptBoth" | "invertFirst",
-      };
-      code = jsQR(imageData.data, imageData.width, imageData.height, invertedOptions);
-    }
-    
-    if (code) {
-      // Save the current frame as an image when QR code is detected
-      if (canvasRef.current) {
-        const capturedImageUrl = canvasRef.current.toDataURL('image/png');
-        setCapturedFrame(capturedImageUrl);
-      }
+    // Try with each inversion type for better detection chances
+    for (const inversionAttempt of inversionTypes) {
+      const code = jsQR(
+        imageData.data, 
+        imageData.width, 
+        imageData.height, 
+        { inversionAttempts: inversionAttempt }
+      );
       
-      onScan(code.data);
-      stopCamera();
-      toast({
-        title: 'QR Code Detected!',
-        description: 'Successfully scanned the QR code.',
-      });
-      return true;
+      if (code) {
+        // Save the current frame as an image when QR code is detected
+        if (canvasRef.current) {
+          const capturedImageUrl = canvasRef.current.toDataURL('image/png');
+          setCapturedFrame(capturedImageUrl);
+        }
+        
+        onScan(code.data);
+        stopCamera();
+        toast({
+          title: 'QR Code Detected!',
+          description: 'Successfully scanned the QR code.',
+        });
+        return true;
+      }
     }
     
     return false;
   };
 
-  // Enhanced scanQRCode function with multiple processing attempts
+  // Significantly enhanced scanQRCode function with multiple detection strategies
   const scanQRCode = () => {
     if (!videoRef.current || !canvasRef.current || !isStreaming) return false;
     
@@ -110,54 +107,95 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     
     if (!ctx) return false;
     
-    // Set canvas dimensions to video dimensions
+    // Set canvas dimensions to match video dimensions
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     
-    // Draw current video frame to canvas
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Multi-scale scanning - try at different scales for better detection
+    const scales = [1.0, 0.75, 1.25, 0.5];
     
-    // Try with original size first
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    
-    // Increment scan attempt counter
-    setScanAttempts(prev => prev + 1);
-    
-    // Try normal scan first
-    if (processImageData(imageData)) {
-      return true;
-    }
-    
-    // If we've had several failed attempts, try with different image processing techniques
-    if (scanAttempts > 10) {
-      // Try increased contrast
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      ctx.globalAlpha = 1.0;
-      ctx.globalCompositeOperation = 'source-over';
+    // Try each scale
+    for (const scale of scales) {
+      // Calculate dimensions based on scale
+      const scaledWidth = Math.floor(video.videoWidth * scale);
+      const scaledHeight = Math.floor(video.videoHeight * scale);
       
-      // Adjust contrast and brightness - helps with difficult lighting
+      // Clear canvas for the new attempt
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw the video at the current scale
+      ctx.drawImage(
+        video, 
+        (canvas.width - scaledWidth) / 2, 
+        (canvas.height - scaledHeight) / 2, 
+        scaledWidth, 
+        scaledHeight
+      );
+      
+      // Apply various image processing techniques to improve detection
+      
+      // 1. Try with original image
+      const originalImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      if (processImageData(originalImageData)) {
+        return true;
+      }
+      
+      // 2. Try with contrast enhancement
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        video, 
+        (canvas.width - scaledWidth) / 2, 
+        (canvas.height - scaledHeight) / 2, 
+        scaledWidth, 
+        scaledHeight
+      );
+      
       const contrastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = contrastImageData.data;
+      const contrastData = contrastImageData.data;
       
-      const contrast = 1.5; // Increase contrast
-      const intercept = 0; // Brightness
+      // Apply high contrast
+      const contrast = 2.0;
+      const brightness = 0;
       
-      for (let i = 0; i < data.length; i += 4) {
+      for (let i = 0; i < contrastData.length; i += 4) {
         // Apply contrast formula to RGB channels
-        data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128 + intercept));
-        data[i+1] = Math.min(255, Math.max(0, (data[i+1] - 128) * contrast + 128 + intercept));
-        data[i+2] = Math.min(255, Math.max(0, (data[i+2] - 128) * contrast + 128 + intercept));
+        contrastData[i] = Math.max(0, Math.min(255, (contrastData[i] - 128) * contrast + 128 + brightness));
+        contrastData[i+1] = Math.max(0, Math.min(255, (contrastData[i+1] - 128) * contrast + 128 + brightness));
+        contrastData[i+2] = Math.max(0, Math.min(255, (contrastData[i+2] - 128) * contrast + 128 + brightness));
       }
       
       ctx.putImageData(contrastImageData, 0, 0);
-      const enhancedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      if (processImageData(contrastImageData)) {
+        return true;
+      }
       
-      // Try scanning with enhanced image
-      if (processImageData(enhancedImageData, 1)) {
+      // 3. Try with grayscale to improve contrast
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        video, 
+        (canvas.width - scaledWidth) / 2, 
+        (canvas.height - scaledHeight) / 2, 
+        scaledWidth, 
+        scaledHeight
+      );
+      
+      const grayscaleImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const grayscaleData = grayscaleImageData.data;
+      
+      for (let i = 0; i < grayscaleData.length; i += 4) {
+        // Convert to grayscale using luminance formula
+        const gray = 0.299 * grayscaleData[i] + 0.587 * grayscaleData[i+1] + 0.114 * grayscaleData[i+2];
+        grayscaleData[i] = grayscaleData[i+1] = grayscaleData[i+2] = gray;
+      }
+      
+      ctx.putImageData(grayscaleImageData, 0, 0);
+      if (processImageData(grayscaleImageData)) {
         return true;
       }
     }
     
+    // Increment scan attempt counter if no code was found
+    setScanAttempts(prev => prev + 1);
     return false;
   };
 
@@ -201,25 +239,24 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
 
   useEffect(() => {
     let scanInterval: NodeJS.Timeout;
-    let isScanning = false;
+    let scanInProgress = false;
 
     if (isStreaming) {
-      // Set up continuous scanning with adaptive interval
+      // Set up scanning with a higher frequency
       scanInterval = setInterval(() => {
         // Only start a new scan if we're not already scanning
-        if (!isScanning) {
-          isScanning = true;
+        if (!scanInProgress) {
+          scanInProgress = true;
           
-          // Use requestAnimationFrame to sync with browser rendering
           requestAnimationFrame(() => {
             try {
               scanQRCode();
             } finally {
-              isScanning = false;
+              scanInProgress = false;
             }
           });
         }
-      }, 100); // Increased frequency to 10 scans per second for better detection
+      }, 50); // Scan every 50ms for better detection rates
     }
 
     return () => {
@@ -278,6 +315,18 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
                 />
                 {!isStreaming && (
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                )}
+                
+                {/* Overlay scanning animation */}
+                {isStreaming && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="relative w-[70%] h-[70%] border-2 border-primary/50 rounded-lg overflow-hidden">
+                      <div className="absolute top-0 left-0 w-full h-1 bg-primary animate-scan" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <ScanQrCode className="text-primary/50 w-12 h-12" />
+                      </div>
+                    </div>
+                  </div>
                 )}
               </>
             )}
