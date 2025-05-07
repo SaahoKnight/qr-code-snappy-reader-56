@@ -14,6 +14,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
   const [isStreaming, setIsStreaming] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [capturedFrame, setCapturedFrame] = useState<string | null>(null);
+  const [scanAttempts, setScanAttempts] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -22,10 +23,19 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
   const startCamera = async () => {
     setIsScanning(true);
     setCapturedFrame(null);
+    setScanAttempts(0);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
-      });
+      const constraints = {
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          // Request higher frame rates for smoother scanning
+          frameRate: { ideal: 30 }
+        }
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       streamRef.current = stream;
       
@@ -54,10 +64,22 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     setIsStreaming(false);
   };
 
-  // Process image data to detect QR code
-  const processImageData = (imageData: ImageData) => {
-    // Use jsQR to detect QR code in image data
-    const code = jsQR(imageData.data, imageData.width, imageData.height);
+  // Process image data to detect QR code with enhanced error handling and multiple attempts
+  const processImageData = (imageData: ImageData, attempt: number = 0): boolean => {
+    // Use jsQR to detect QR code in image data with increased sensitivity
+    const options = {
+      inversionAttempts: "dontInvert", // Try with default first (faster)
+    };
+    
+    let code = jsQR(imageData.data, imageData.width, imageData.height, options);
+    
+    // If no code found with default inversion, try with inversion (catches more codes)
+    if (!code && attempt === 0) {
+      const invertedOptions = {
+        inversionAttempts: "invertFirst", // Try inverted version
+      };
+      code = jsQR(imageData.data, imageData.width, imageData.height, invertedOptions);
+    }
     
     if (code) {
       // Save the current frame as an image when QR code is detected
@@ -78,14 +100,15 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     return false;
   };
 
+  // Enhanced scanQRCode function with multiple processing attempts
   const scanQRCode = () => {
-    if (!videoRef.current || !canvasRef.current || !isStreaming) return;
+    if (!videoRef.current || !canvasRef.current || !isStreaming) return false;
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     
-    if (!ctx) return;
+    if (!ctx) return false;
     
     // Set canvas dimensions to video dimensions
     canvas.width = video.videoWidth;
@@ -94,17 +117,55 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     // Draw current video frame to canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // Get image data from the canvas
+    // Try with original size first
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     
-    // Process the image data to detect QR code
-    return processImageData(imageData);
+    // Increment scan attempt counter
+    setScanAttempts(prev => prev + 1);
+    
+    // Try normal scan first
+    if (processImageData(imageData)) {
+      return true;
+    }
+    
+    // If we've had several failed attempts, try with different image processing techniques
+    if (scanAttempts > 10) {
+      // Try increased contrast
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.globalAlpha = 1.0;
+      ctx.globalCompositeOperation = 'source-over';
+      
+      // Adjust contrast and brightness - helps with difficult lighting
+      const contrastImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = contrastImageData.data;
+      
+      const contrast = 1.5; // Increase contrast
+      const intercept = 0; // Brightness
+      
+      for (let i = 0; i < data.length; i += 4) {
+        // Apply contrast formula to RGB channels
+        data[i] = Math.min(255, Math.max(0, (data[i] - 128) * contrast + 128 + intercept));
+        data[i+1] = Math.min(255, Math.max(0, (data[i+1] - 128) * contrast + 128 + intercept));
+        data[i+2] = Math.min(255, Math.max(0, (data[i+2] - 128) * contrast + 128 + intercept));
+      }
+      
+      ctx.putImageData(contrastImageData, 0, 0);
+      const enhancedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      
+      // Try scanning with enhanced image
+      if (processImageData(enhancedImageData, 1)) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   // Restart scanning
   const handleRescan = () => {
     setCapturedFrame(null);
     setIsScanning(false);
+    setScanAttempts(0);
     setTimeout(() => {
       startCamera();
     }, 100);
@@ -139,23 +200,32 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
   }, [isActive]);
 
   useEffect(() => {
-    let animationFrame: number;
     let scanInterval: NodeJS.Timeout;
+    let isScanning = false;
 
     if (isStreaming) {
-      // Set up continuous scanning with reduced interval (250ms)
+      // Set up continuous scanning with adaptive interval
       scanInterval = setInterval(() => {
-        animationFrame = requestAnimationFrame(() => {
-          scanQRCode();
-        });
-      }, 250); // Scan every 250ms for better detection
+        // Only start a new scan if we're not already scanning
+        if (!isScanning) {
+          isScanning = true;
+          
+          // Use requestAnimationFrame to sync with browser rendering
+          requestAnimationFrame(() => {
+            try {
+              scanQRCode();
+            } finally {
+              isScanning = false;
+            }
+          });
+        }
+      }, 100); // Increased frequency to 10 scans per second for better detection
     }
 
     return () => {
       if (scanInterval) clearInterval(scanInterval);
-      if (animationFrame) cancelAnimationFrame(animationFrame);
     };
-  }, [isStreaming]);
+  }, [isStreaming, scanAttempts]);
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -200,6 +270,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
                   className={`w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
                   playsInline
                   muted
+                  autoPlay
                 />
                 <canvas 
                   ref={canvasRef} 
