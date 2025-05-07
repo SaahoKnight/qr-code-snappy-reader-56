@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
-import { CameraOff } from 'lucide-react';
+import { CameraOff, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface QrCodeCameraScannerProps {
@@ -13,6 +13,7 @@ interface QrCodeCameraScannerProps {
 const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [capturedFrame, setCapturedFrame] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -20,6 +21,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
 
   const startCamera = async () => {
     setIsScanning(true);
+    setCapturedFrame(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' }
@@ -50,7 +52,6 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     }
     
     setIsStreaming(false);
-    setIsScanning(false);
   };
 
   // Process image data to detect QR code
@@ -59,6 +60,12 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     const code = jsQR(imageData.data, imageData.width, imageData.height);
     
     if (code) {
+      // Save the current frame as an image when QR code is detected
+      if (canvasRef.current) {
+        const capturedImageUrl = canvasRef.current.toDataURL('image/png');
+        setCapturedFrame(capturedImageUrl);
+      }
+      
       onScan(code.data);
       stopCamera();
       toast({
@@ -92,6 +99,30 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     
     // Process the image data to detect QR code
     return processImageData(imageData);
+  };
+
+  // Restart scanning
+  const handleRescan = () => {
+    setCapturedFrame(null);
+    setIsScanning(false);
+    setTimeout(() => {
+      startCamera();
+    }, 100);
+  };
+
+  // Download captured frame
+  const handleDownloadFrame = () => {
+    if (!capturedFrame) return;
+    
+    const link = document.createElement('a');
+    link.href = capturedFrame;
+    link.download = `qr-scan-${new Date().getTime()}.png`;
+    link.click();
+    
+    toast({
+      title: 'Image Downloaded',
+      description: 'The captured QR image has been downloaded.',
+    });
   };
 
   // Start camera when tab becomes active
@@ -131,18 +162,53 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
       <div className="relative w-full aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
         {isScanning ? (
           <>
-            <video 
-              ref={videoRef} 
-              className={`w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
-              playsInline
-              muted
-            />
-            <canvas 
-              ref={canvasRef} 
-              className="hidden"
-            />
-            {!isStreaming && (
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            {capturedFrame ? (
+              <div className="relative w-full h-full">
+                {/* Display captured frame edge to edge */}
+                <img 
+                  src={capturedFrame} 
+                  alt="Captured QR code" 
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Blurred button background for download (bottom-left) */}
+                <div className="absolute bottom-4 left-4 bg-black/30 backdrop-blur-sm rounded-full">
+                  <Button 
+                    onClick={handleDownloadFrame}
+                    size="icon" 
+                    className="h-12 w-12 rounded-full"
+                  >
+                    <Download className="h-6 w-6" />
+                  </Button>
+                </div>
+                
+                {/* Blurred button background for rescan (bottom-right) */}
+                <div className="absolute bottom-4 right-4 bg-black/30 backdrop-blur-sm rounded-full">
+                  <Button 
+                    onClick={handleRescan}
+                    size="icon" 
+                    className="h-12 w-12 rounded-full"
+                  >
+                    <RefreshCw className="h-6 w-6" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <video 
+                  ref={videoRef} 
+                  className={`w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
+                  playsInline
+                  muted
+                />
+                <canvas 
+                  ref={canvasRef} 
+                  className="hidden"
+                />
+                {!isStreaming && (
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                )}
+              </>
             )}
           </>
         ) : (
