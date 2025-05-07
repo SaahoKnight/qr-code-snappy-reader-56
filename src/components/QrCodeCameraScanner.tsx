@@ -68,7 +68,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
   const processImageData = (imageData: ImageData, attempt: number = 0): boolean => {
     // Use jsQR to detect QR code in image data with increased sensitivity
     const options = {
-      inversionAttempts: "dontInvert", // Try with default first (faster)
+      inversionAttempts: "dontInvert" as "dontInvert" | "onlyInvert" | "attemptBoth" | "invertFirst",
     };
     
     let code = jsQR(imageData.data, imageData.width, imageData.height, options);
@@ -76,7 +76,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     // If no code found with default inversion, try with inversion (catches more codes)
     if (!code && attempt === 0) {
       const invertedOptions = {
-        inversionAttempts: "invertFirst", // Try inverted version
+        inversionAttempts: "invertFirst" as "dontInvert" | "onlyInvert" | "attemptBoth" | "invertFirst",
       };
       code = jsQR(imageData.data, imageData.width, imageData.height, invertedOptions);
     }
