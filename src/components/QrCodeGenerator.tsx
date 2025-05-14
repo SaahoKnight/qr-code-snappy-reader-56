@@ -12,8 +12,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Card } from "@/components/ui/card";
 import jsPDF from 'jspdf';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const QrCodeGenerator = () => {
   const [text, setText] = useState('');
@@ -25,6 +25,7 @@ const QrCodeGenerator = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handlePasteFromClipboard = async () => {
     try {
@@ -276,10 +277,10 @@ const QrCodeGenerator = () => {
         </div>
       </div>
       
-      {/* Customization Options - moved out from collapsible */}
-      <Card className="p-4 w-full space-y-6">
-        {/* Colors Selection */}
-        <div className="grid grid-cols-2 gap-4">
+      {/* Customization Options - without Card border */}
+      <div className="w-full space-y-6">
+        {/* Colors Selection - responsive layout */}
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
           <div className="space-y-2">
             <Label>Background Color</Label>
             <div className="flex items-center gap-2">
@@ -287,7 +288,7 @@ const QrCodeGenerator = () => {
                 type="color"
                 value={bgColor}
                 onChange={(e) => setBgColor(e.target.value)}
-                className="w-12 h-12 rounded cursor-pointer"
+                className="w-12 h-12 rounded cursor-pointer border border-gray-300"
                 title="Select background color"
               />
               <Input 
@@ -306,7 +307,7 @@ const QrCodeGenerator = () => {
                 type="color"
                 value={fgColor}
                 onChange={(e) => setFgColor(e.target.value)}
-                className="w-12 h-12 rounded cursor-pointer"
+                className="w-12 h-12 rounded cursor-pointer border border-gray-300"
                 title="Select foreground color"
               />
               <Input 
@@ -348,7 +349,7 @@ const QrCodeGenerator = () => {
             onValueChange={(value) => setBorderSize(value[0])}
           />
         </div>
-      </Card>
+      </div>
 
       {/* Download Button with Format Selection */}
       <div className="w-full flex justify-center">
