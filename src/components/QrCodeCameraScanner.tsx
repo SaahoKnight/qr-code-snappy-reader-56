@@ -2,7 +2,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import jsQR from 'jsqr';
-import { CameraOff, RefreshCw, Download, ScanQrCode } from 'lucide-react';
+import { CameraOff, RefreshCw, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface QrCodeCameraScannerProps {
@@ -14,7 +14,6 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
   const [isStreaming, setIsStreaming] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [capturedFrame, setCapturedFrame] = useState<string | null>(null);
-  const [scanAttempts, setScanAttempts] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -23,25 +22,16 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
   const startCamera = async () => {
     setIsScanning(true);
     setCapturedFrame(null);
-    setScanAttempts(0);
     try {
-      const constraints = {
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
-      
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
       
       streamRef.current = stream;
       
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(error => {
-          console.error("Error playing video:", error);
-        });
+        videoRef.current.play();
         setIsStreaming(true);
       }
     } catch (error) {
@@ -64,82 +54,57 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
     setIsStreaming(false);
   };
 
-  const scanQRCode = () => {
-    if (!videoRef.current || !canvasRef.current || !isStreaming) return false;
+  // Process image data to detect QR code
+  const processImageData = (imageData: ImageData) => {
+    // Use jsQR to detect QR code in image data
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
     
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    
-    // Make sure video is ready
-    if (video.readyState !== video.HAVE_ENOUGH_DATA) {
-      console.log("Video not ready yet");
-      return false;
-    }
-
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return false;
-    
-    // Set canvas dimensions to match video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    
-    if (canvas.width === 0 || canvas.height === 0) {
-      console.log("Canvas dimensions are zero");
-      return false;
-    }
-    
-    // Clear canvas and draw video frame
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    try {
-      // Get image data
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      
-      if (imageData.width === 0 || imageData.height === 0) {
-        console.log("Image data dimensions are zero");
-        return false;
+    if (code) {
+      // Save the current frame as an image when QR code is detected
+      if (canvasRef.current) {
+        const capturedImageUrl = canvasRef.current.toDataURL('image/png');
+        setCapturedFrame(capturedImageUrl);
       }
       
-      console.log("Attempting QR scan with dimensions:", imageData.width, imageData.height);
-      
-      // Try with different inversion attempts
-      const inversionTypes = ["dontInvert", "onlyInvert", "attemptBoth", "invertFirst"];
-      
-      for (const inversionType of inversionTypes) {
-        const code = jsQR(
-          imageData.data, 
-          imageData.width, 
-          imageData.height, 
-          { inversionAttempts: inversionType as any }
-        );
-        
-        if (code) {
-          console.log("QR Code detected:", code.data);
-          // Save the current frame
-          const capturedImageUrl = canvas.toDataURL('image/png');
-          setCapturedFrame(capturedImageUrl);
-          
-          onScan(code.data);
-          stopCamera();
-          toast({
-            title: 'QR Code Detected!',
-            description: 'Successfully scanned the QR code.',
-          });
-          return true;
-        }
-      }
-    } catch (error) {
-      console.error("Error during QR scan:", error);
+      onScan(code.data);
+      stopCamera();
+      toast({
+        title: 'QR Code Detected!',
+        description: 'Successfully scanned the QR code.',
+      });
+      return true;
     }
     
     return false;
+  };
+
+  const scanQRCode = () => {
+    if (!videoRef.current || !canvasRef.current || !isStreaming) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return;
+    
+    // Set canvas dimensions to video dimensions
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw current video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Get image data from the canvas
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Process the image data to detect QR code
+    return processImageData(imageData);
   };
 
   // Restart scanning
   const handleRescan = () => {
     setCapturedFrame(null);
     setIsScanning(false);
-    setScanAttempts(0);
     setTimeout(() => {
       startCamera();
     }, 100);
@@ -174,19 +139,21 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
   }, [isActive]);
 
   useEffect(() => {
-    let scanInterval: number | null = null;
-    
+    let animationFrame: number;
+    let scanInterval: NodeJS.Timeout;
+
     if (isStreaming) {
-      // Set up scanning with an appropriate interval
-      scanInterval = window.setInterval(() => {
-        scanQRCode();
-      }, 200); // 5 scans per second is reasonable
+      // Set up continuous scanning with reduced interval (250ms)
+      scanInterval = setInterval(() => {
+        animationFrame = requestAnimationFrame(() => {
+          scanQRCode();
+        });
+      }, 250); // Scan every 250ms for better detection
     }
-    
+
     return () => {
-      if (scanInterval !== null) {
-        clearInterval(scanInterval);
-      }
+      if (scanInterval) clearInterval(scanInterval);
+      if (animationFrame) cancelAnimationFrame(animationFrame);
     };
   }, [isStreaming]);
 
@@ -197,12 +164,14 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
           <>
             {capturedFrame ? (
               <div className="relative w-full h-full">
+                {/* Display captured frame edge to edge */}
                 <img 
                   src={capturedFrame} 
                   alt="Captured QR code" 
                   className="w-full h-full object-cover"
                 />
                 
+                {/* Blurred button background for download (bottom-left) */}
                 <div className="absolute bottom-4 left-4 bg-black/30 backdrop-blur-sm rounded-full">
                   <Button 
                     onClick={handleDownloadFrame}
@@ -213,6 +182,7 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
                   </Button>
                 </div>
                 
+                {/* Blurred button background for rescan (bottom-right) */}
                 <div className="absolute bottom-4 right-4 bg-black/30 backdrop-blur-sm rounded-full">
                   <Button 
                     onClick={handleRescan}
@@ -230,7 +200,6 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
                   className={`w-full h-full object-cover ${isStreaming ? 'block' : 'hidden'}`}
                   playsInline
                   muted
-                  autoPlay
                 />
                 <canvas 
                   ref={canvasRef} 
@@ -239,15 +208,6 @@ const QrCodeCameraScanner = ({ onScan, isActive }: QrCodeCameraScannerProps) => 
                 {!isStreaming && (
                   <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
                 )}
-                
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="relative w-[70%] h-[70%] border-2 border-primary/50 rounded-lg overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-primary animate-scan" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <ScanQrCode className="text-primary/50 w-12 h-12" />
-                    </div>
-                  </div>
-                </div>
               </>
             )}
           </>
