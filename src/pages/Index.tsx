@@ -1,54 +1,30 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import QrCodeGenerator from '@/components/QrCodeGenerator';
-import QrCodeScanner from '@/components/QrCodeScanner';
-import { QrCode, Image } from 'lucide-react';
+import { QrCode } from 'lucide-react';
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('scan');
-
   return (
     <div className="min-h-screen flex flex-col items-center p-4 sm:p-8">
       <div className="w-full max-w-lg">
         <header className="mb-8 text-center">
           <h1 className="text-3xl font-bold tracking-tight mb-2">QR Code Snappy</h1>
-          <p className="text-muted-foreground">Generate and scan QR codes easily</p>
+          <p className="text-muted-foreground">Generate QR codes easily</p>
         </header>
 
         <Card className="border shadow-sm">
-          <Tabs 
-            defaultValue="scan" 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="scan" className="flex items-center gap-2">
-                <Image size={18} />
-                <span>Scan</span>
-              </TabsTrigger>
-              <TabsTrigger value="generate" className="flex items-center gap-2">
-                <QrCode size={18} />
-                <span>Generate</span>
-              </TabsTrigger>
-            </TabsList>
-            
-            <CardContent>
-              <TabsContent value="scan" className="mt-0">
-                <QrCodeScanner />
-              </TabsContent>
-              
-              <TabsContent value="generate" className="mt-0">
-                <QrCodeGenerator />
-              </TabsContent>
-            </CardContent>
-          </Tabs>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <QrCode size={18} />
+              <h2 className="text-lg font-medium">Generate QR Code</h2>
+            </div>
+            <QrCodeGenerator />
+          </CardContent>
         </Card>
 
         <footer className="mt-8 text-center text-sm text-muted-foreground">
-          <p>Create and scan QR codes instantly</p>
+          <p>Create QR codes instantly</p>
         </footer>
       </div>
     </div>
