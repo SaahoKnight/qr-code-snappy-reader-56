@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Palette, Image, FileText, FileImage } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, FileImage } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -12,11 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Card } from "@/components/ui/card";
 import jsPDF from 'jspdf';
 
@@ -27,7 +22,6 @@ const QrCodeGenerator = () => {
   const [bgColor, setBgColor] = useState('#ffffff');
   const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
-  const [isCustomizeOpen, setIsCustomizeOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -282,102 +276,79 @@ const QrCodeGenerator = () => {
         </div>
       </div>
       
-      {/* Customize Collapsible */}
-      <Collapsible 
-        open={isCustomizeOpen} 
-        onOpenChange={setIsCustomizeOpen}
-        className="w-full border rounded-md overflow-hidden"
-      >
-        <CollapsibleTrigger asChild>
-          <Button 
-            variant="outline" 
-            className="flex items-center justify-between w-full rounded-b-none border-b-0"
-          >
+      {/* Customization Options - moved out from collapsible */}
+      <Card className="p-4 w-full space-y-6">
+        {/* Colors Selection */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Background Color</Label>
             <div className="flex items-center gap-2">
-              <Palette size={18} />
-              <span>Customize</span>
-            </div>
-            <ChevronDown 
-              size={16} 
-              className={`transition-transform duration-200 ${isCustomizeOpen ? 'rotate-180' : ''}`}
-            />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="p-4 border-t bg-background">
-          <Card className="p-4 space-y-6">
-            {/* Colors Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Background Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="w-12 h-12 rounded cursor-pointer"
-                    title="Select background color"
-                  />
-                  <Input 
-                    type="text"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Foreground Color</Label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={fgColor}
-                    onChange={(e) => setFgColor(e.target.value)}
-                    className="w-12 h-12 rounded cursor-pointer"
-                    title="Select foreground color"
-                  />
-                  <Input 
-                    type="text"
-                    value={fgColor}
-                    onChange={(e) => setFgColor(e.target.value)}
-                    className="flex-1"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Size Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="qr-size">Size: {size}px</Label>
-              </div>
-              <Slider
-                id="qr-size"
-                value={[size]}
-                min={100}
-                max={300}
-                step={10}
-                onValueChange={(value) => setSize(value[0])}
+              <input
+                type="color"
+                value={bgColor}
+                onChange={(e) => setBgColor(e.target.value)}
+                className="w-12 h-12 rounded cursor-pointer"
+                title="Select background color"
+              />
+              <Input 
+                type="text"
+                value={bgColor}
+                onChange={(e) => setBgColor(e.target.value)}
+                className="flex-1"
               />
             </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Foreground Color</Label>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={fgColor}
+                onChange={(e) => setFgColor(e.target.value)}
+                className="w-12 h-12 rounded cursor-pointer"
+                title="Select foreground color"
+              />
+              <Input 
+                type="text"
+                value={fgColor}
+                onChange={(e) => setFgColor(e.target.value)}
+                className="flex-1"
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Size Slider */}
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Label htmlFor="qr-size">Size: {size}px</Label>
+          </div>
+          <Slider
+            id="qr-size"
+            value={[size]}
+            min={100}
+            max={300}
+            step={10}
+            onValueChange={(value) => setSize(value[0])}
+          />
+        </div>
 
-            {/* Border Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="qr-border">Border: {borderSize}px</Label>
-              </div>
-              <Slider
-                id="qr-border"
-                value={[borderSize]}
-                min={0}
-                max={50}
-                step={1}
-                onValueChange={(value) => setBorderSize(value[0])}
-              />
-            </div>
-          </Card>
-        </CollapsibleContent>
-      </Collapsible>
+        {/* Border Slider */}
+        <div className="space-y-2">
+          <div className="flex justify-between">
+            <Label htmlFor="qr-border">Border: {borderSize}px</Label>
+          </div>
+          <Slider
+            id="qr-border"
+            value={[borderSize]}
+            min={0}
+            max={50}
+            step={1}
+            onValueChange={(value) => setBorderSize(value[0])}
+          />
+        </div>
+      </Card>
 
       {/* Download Button with Format Selection */}
       <div className="w-full flex justify-center">
