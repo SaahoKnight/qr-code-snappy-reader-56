@@ -2,7 +2,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import QrCodeGenerator from '@/components/QrCodeGenerator';
-import { QrCode } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -15,10 +14,6 @@ const Index = () => {
 
         <Card className="border shadow-sm">
           <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <QrCode size={18} />
-              <h2 className="text-lg font-medium">Generate QR Code</h2>
-            </div>
             <QrCodeGenerator />
           </CardContent>
         </Card>
