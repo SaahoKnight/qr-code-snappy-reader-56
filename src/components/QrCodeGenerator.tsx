@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Image, FileText, FileImage } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, Code } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import jsPDF from 'jspdf';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Textarea } from '@/components/ui/textarea';
 
 const QrCodeGenerator = () => {
   const [text, setText] = useState('');
@@ -22,15 +23,16 @@ const QrCodeGenerator = () => {
   const [bgColor, setBgColor] = useState('#ffffff');
   const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const MAX_CHARS = 2048; // QR code text capacity limit
 
   const handlePasteFromClipboard = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      setText(text);
+      setText(text.substring(0, MAX_CHARS)); // Limit to MAX_CHARS
       toast({
         title: 'Content Pasted',
         description: 'Text has been pasted from clipboard',
@@ -42,6 +44,11 @@ const QrCodeGenerator = () => {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Limit input to MAX_CHARS
+    setText(e.target.value.substring(0, MAX_CHARS));
   };
 
   const handleDownload = () => {
@@ -224,7 +231,7 @@ const QrCodeGenerator = () => {
       case 'pdf':
         return <FileText size={16} />;
       case 'svg':
-        return <FileImage size={16} />;
+        return <Code size={16} />;
       default:
         return <FileImage size={16} />;
     }
@@ -256,24 +263,27 @@ const QrCodeGenerator = () => {
       <div className="w-full space-y-2">
         <Label htmlFor="qr-text">Enter text or URL</Label>
         <div className="relative">
-          <Input
+          <Textarea
             id="qr-text"
             ref={inputRef}
-            type="text"
             placeholder="Enter text or paste URL"
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            className="w-full pr-10"
+            onChange={handleTextChange}
+            className="w-full pr-10 resize-none"
+            rows={3}
           />
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-0 top-0"
+            className="absolute right-2 top-2"
             onClick={handlePasteFromClipboard}
             title="Paste from clipboard"
           >
             <Clipboard size={18} />
           </Button>
+        </div>
+        <div className="text-xs text-muted-foreground text-right">
+          {text.length} / {MAX_CHARS} characters
         </div>
       </div>
       
@@ -387,7 +397,7 @@ const QrCodeGenerator = () => {
               JPG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
-              <FileImage size={16} className="mr-2" />
+              <Code size={16} className="mr-2" />
               SVG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
