@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -398,7 +397,7 @@ const QrCodeGenerator = () => {
               JPG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
-              <Code size={16} className="mr-2" />
+              <FileCode size={16} className="mr-2" />
               SVG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
