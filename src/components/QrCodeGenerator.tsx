@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ const QrCodeGenerator = () => {
   const [bgColor, setBgColor] = useState('#ffffff');
   const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
+  const [isTextTooLong, setIsTextTooLong] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -32,11 +34,22 @@ const QrCodeGenerator = () => {
   const handlePasteFromClipboard = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      setText(text.substring(0, MAX_CHARS)); // Limit to MAX_CHARS
-      toast({
-        title: 'Content Pasted',
-        description: 'Text has been pasted from clipboard',
-      });
+      const truncatedText = text.substring(0, MAX_CHARS);
+      setText(truncatedText);
+      setIsTextTooLong(text.length > MAX_CHARS);
+      
+      if (text.length > MAX_CHARS) {
+        toast({
+          title: 'Text truncated',
+          description: `Text was too long and has been truncated to ${MAX_CHARS} characters`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Content Pasted',
+          description: 'Text has been pasted from clipboard',
+        });
+      }
     } catch (error) {
       toast({
         title: 'Paste Failed',
@@ -48,7 +61,17 @@ const QrCodeGenerator = () => {
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     // Limit input to MAX_CHARS
-    setText(e.target.value.substring(0, MAX_CHARS));
+    const newText = e.target.value.substring(0, MAX_CHARS);
+    setText(newText);
+    setIsTextTooLong(e.target.value.length > MAX_CHARS);
+    
+    if (e.target.value.length > MAX_CHARS) {
+      toast({
+        title: 'Character limit reached',
+        description: `Text has been truncated to ${MAX_CHARS} characters`,
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleDownload = () => {
@@ -225,25 +248,51 @@ const QrCodeGenerator = () => {
     }
   };
 
+  // Only display QR code if text is within the valid length
+  const renderQrCode = () => {
+    if (!text) {
+      return (
+        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
+          <p className="text-sm text-gray-400">Enter text to generate QR</p>
+        </div>
+      );
+    }
+    
+    if (isTextTooLong) {
+      return (
+        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
+          <p className="text-sm text-gray-400 text-center px-4">Text too long for QR code.<br/>Reduce to {MAX_CHARS} characters.</p>
+        </div>
+      );
+    }
+    
+    try {
+      return (
+        <QRCodeCanvas
+          value={text}
+          size={size}
+          bgColor={bgColor}
+          fgColor={fgColor}
+          level="H"
+          includeMargin={false}
+        />
+      );
+    } catch (error) {
+      console.error("QR Code generation error:", error);
+      return (
+        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
+          <p className="text-sm text-gray-400 text-center px-4">Could not generate QR code.<br/>Try with less text.</p>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-8 p-4 w-full max-w-md mx-auto">
       {/* QR Code at the top */}
       <div style={qrContainerStyle} ref={qrRef}>
         <div style={qrWrapperStyle}>
-          {text ? (
-            <QRCodeCanvas
-              value={text}
-              size={size}
-              bgColor={bgColor}
-              fgColor={fgColor}
-              level="H"
-              includeMargin={false}
-            />
-          ) : (
-            <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
-              <p className="text-sm text-gray-400">Enter text to generate QR</p>
-            </div>
-          )}
+          {renderQrCode()}
         </div>
       </div>
 
@@ -257,7 +306,7 @@ const QrCodeGenerator = () => {
             placeholder="Enter text or paste URL"
             value={text}
             onChange={handleTextChange}
-            className="w-full pr-10 resize-none"
+            className={`w-full pr-10 resize-none ${isTextTooLong ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
             rows={3}
           />
           <Button
@@ -270,8 +319,9 @@ const QrCodeGenerator = () => {
             <Clipboard size={18} />
           </Button>
         </div>
-        <div className="text-xs text-muted-foreground text-right">
+        <div className={`text-xs ${isTextTooLong ? 'text-red-500 font-medium' : 'text-muted-foreground'} text-right`}>
           {text.length} / {MAX_CHARS} characters
+          {isTextTooLong && ' (text too long)'}
         </div>
       </div>
       
@@ -356,7 +406,7 @@ const QrCodeGenerator = () => {
             <Button 
               onClick={handleDownload} 
               className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
-              disabled={!text}
+              disabled={!text || isTextTooLong}
             >
               <Download size={18} />
               Download
@@ -365,7 +415,7 @@ const QrCodeGenerator = () => {
               <Button 
                 className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
                 variant="default"
-                disabled={!text}
+                disabled={!text || isTextTooLong}
               >
                 <span className="mr-1 flex items-center gap-1">
                   {getFormatIcon()}
