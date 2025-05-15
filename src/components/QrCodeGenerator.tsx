@@ -1,11 +1,10 @@
-
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -20,16 +19,22 @@ import { Textarea } from '@/components/ui/textarea';
 const QrCodeGenerator = () => {
   const [text, setText] = useState('');
   const [size, setSize] = useState(200);
-  const [borderSize, setBorderSize] = useState(10); // Changed from 0 to 10 as default
+  const [borderSize, setBorderSize] = useState(10);
   const [bgColor, setBgColor] = useState('#ffffff');
   const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [isTextTooLong, setIsTextTooLong] = useState(false);
+  const [qrError, setQrError] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const qrRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const MAX_CHARS = 2048; // QR code text capacity limit
+
+  // Reset error state when text changes
+  const resetErrorState = () => {
+    setQrError(false);
+  };
 
   const handlePasteFromClipboard = async () => {
     try {
@@ -37,6 +42,7 @@ const QrCodeGenerator = () => {
       const truncatedText = text.substring(0, MAX_CHARS);
       setText(truncatedText);
       setIsTextTooLong(text.length > MAX_CHARS);
+      resetErrorState();
       
       if (text.length > MAX_CHARS) {
         toast({
@@ -60,6 +66,8 @@ const QrCodeGenerator = () => {
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    resetErrorState();
+    
     // Limit input to MAX_CHARS
     const newText = e.target.value.substring(0, MAX_CHARS);
     setText(newText);
@@ -79,6 +87,15 @@ const QrCodeGenerator = () => {
       toast({
         title: 'No content to generate',
         description: 'Please enter some text to generate a QR code',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (isTextTooLong || qrError) {
+      toast({
+        title: 'Cannot generate QR code',
+        description: 'The text is too complex for a QR code. Please reduce text length or complexity.',
         variant: 'destructive',
       });
       return;
@@ -248,7 +265,7 @@ const QrCodeGenerator = () => {
     }
   };
 
-  // Only display QR code if text is within the valid length
+  // Enhanced renderQrCode function to catch errors
   const renderQrCode = () => {
     if (!text) {
       return (
@@ -273,15 +290,23 @@ const QrCodeGenerator = () => {
           size={size}
           bgColor={bgColor}
           fgColor={fgColor}
-          level="H"
+          level="L" // Changed from "H" to "L" for better capacity
           includeMargin={false}
+          onError={() => {
+            setQrError(true);
+            console.error("QR Code generation error");
+          }}
         />
       );
     } catch (error) {
       console.error("QR Code generation error:", error);
+      setQrError(true);
       return (
-        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
-          <p className="text-sm text-gray-400 text-center px-4">Could not generate QR code.<br/>Try with less text.</p>
+        <div className="flex flex-col items-center justify-center bg-gray-100 p-4" style={{ width: size, height: size }}>
+          <AlertTriangle className="text-red-500 mb-2" size={32} />
+          <p className="text-sm text-gray-700 text-center">
+            Cannot generate QR code.<br/>Text is too complex.
+          </p>
         </div>
       );
     }
@@ -306,7 +331,7 @@ const QrCodeGenerator = () => {
             placeholder="Enter text or paste URL"
             value={text}
             onChange={handleTextChange}
-            className={`w-full pr-10 resize-none ${isTextTooLong ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+            className={`w-full pr-10 resize-none ${isTextTooLong || qrError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
             rows={3}
           />
           <Button
@@ -319,9 +344,10 @@ const QrCodeGenerator = () => {
             <Clipboard size={18} />
           </Button>
         </div>
-        <div className={`text-xs ${isTextTooLong ? 'text-red-500 font-medium' : 'text-muted-foreground'} text-right`}>
+        <div className={`text-xs ${isTextTooLong || qrError ? 'text-red-500 font-medium' : 'text-muted-foreground'} text-right`}>
           {text.length} / {MAX_CHARS} characters
           {isTextTooLong && ' (text too long)'}
+          {qrError && !isTextTooLong && ' (content too complex for QR code)'}
         </div>
       </div>
       
@@ -406,7 +432,7 @@ const QrCodeGenerator = () => {
             <Button 
               onClick={handleDownload} 
               className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
-              disabled={!text || isTextTooLong}
+              disabled={!text || isTextTooLong || qrError}
             >
               <Download size={18} />
               Download
@@ -415,7 +441,7 @@ const QrCodeGenerator = () => {
               <Button 
                 className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
                 variant="default"
-                disabled={!text || isTextTooLong}
+                disabled={!text || isTextTooLong || qrError}
               >
                 <span className="mr-1 flex items-center gap-1">
                   {getFormatIcon()}
