@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 const QrCodeGenerator = () => {
   const [text, setText] = useState('');
   const [size, setSize] = useState(200);
-  const [borderSize, setBorderSize] = useState(0);
+  const [borderSize, setBorderSize] = useState(10); // Changed from 0 to 10 as default
   const [bgColor, setBgColor] = useState('#ffffff');
   const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
@@ -127,7 +127,7 @@ const QrCodeGenerator = () => {
       url = finalCanvas.toDataURL('image/jpeg', 0.9); // 0.9 quality
       filename = `qrcode-${new Date().getTime()}.jpg`;
     } else if (downloadFormat === 'pdf') {
-      // Generate PDF directly
+      // Generate PDF directly - modified to only include the QR code
       try {
         // Create new PDF document
         const pdf = new jsPDF({
@@ -148,24 +148,12 @@ const QrCodeGenerator = () => {
         
         // Center QR on page
         const xPos = (pageWidth - qrSizeInPdf) / 2;
-        const yPos = 40; // Some margin from the top
+        const yPos = (pageHeight - qrSizeInPdf) / 2; // Center vertically as well
         
         // Add the QR code image
         pdf.addImage(imgData, 'PNG', xPos, yPos, qrSizeInPdf, qrSizeInPdf);
         
-        // Add text content below the QR code
-        pdf.setFontSize(12);
-        
-        // Add title
-        pdf.setFont(undefined, 'bold');
-        pdf.text('QR Code Content:', xPos, yPos + qrSizeInPdf + 15);
-        
-        // Add the actual text content with word wrapping
-        pdf.setFont(undefined, 'normal');
-        const splitText = pdf.splitTextToSize(text, pageWidth - 40);
-        pdf.text(splitText, xPos, yPos + qrSizeInPdf + 25);
-        
-        // Save the PDF
+        // Save the PDF - no text content added
         pdf.save(`qrcode-${new Date().getTime()}.pdf`);
         
         toast({
