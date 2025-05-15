@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Image, FileText, Code, FileImage } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -232,7 +232,7 @@ const QrCodeGenerator = () => {
       case 'pdf':
         return <FileText size={16} />;
       case 'svg':
-        return <Code size={16} />;
+        return <FileCode size={16} />;
       default:
         return <FileImage size={16} />;
     }
