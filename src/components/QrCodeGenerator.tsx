@@ -231,7 +231,7 @@ const QrCodeGenerator = () => {
     }
   };
 
-  // Update the container style to remove the borders
+  // Update the container style to properly show the border as padding without adding unnecessary borders
   const qrContainerStyle = {
     display: 'flex',
     justifyContent: 'center',
@@ -242,13 +242,13 @@ const QrCodeGenerator = () => {
     aspectRatio: '1 / 1',
   };
 
-  // Create a separate style for the QR code wrapper without visible borders
+  // Create a separate style for the QR code wrapper with the border
   const qrWrapperStyle = {
     padding: `${borderSize}px`,
     backgroundColor: bgColor,
     display: 'inline-flex',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   };
 
   // Helper to get the appropriate icon for the selected format
@@ -357,7 +357,7 @@ const QrCodeGenerator = () => {
       <div className="w-full lg:w-1/2 space-y-6">
         {/* Customization Options */}
         <div className="space-y-6">
-          {/* Colors Selection - responsive layout without borders */}
+          {/* Colors Selection - responsive layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Background Color</Label>
@@ -398,7 +398,7 @@ const QrCodeGenerator = () => {
             </div>
           </div>
           
-          {/* Size Slider without border */}
+          {/* Size Slider */}
           <div className="space-y-2">
             <div className="flex justify-between">
               <Label htmlFor="qr-size">Size: {size}px</Label>
