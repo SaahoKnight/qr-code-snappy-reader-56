@@ -314,7 +314,7 @@ const QrCodeGenerator = () => {
 
   return (
     <div className="flex flex-col lg:flex-row gap-8 w-full">
-      {/* QR Code in the left column on desktop */}
+      {/* QR Code and download button in the left column on desktop */}
       <div className="flex flex-col items-center w-full lg:w-1/2 gap-6">
         <div style={qrContainerStyle} ref={qrRef}>
           <div style={qrWrapperStyle}>
@@ -322,8 +322,58 @@ const QrCodeGenerator = () => {
           </div>
         </div>
 
-        {/* Input field with paste button moved to replace download button */}
+        {/* Download Button with Format Selection */}
         <div className="w-full max-w-[300px]">
+          <DropdownMenu>
+            <div className="flex">
+              <Button 
+                onClick={handleDownload} 
+                className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
+                disabled={!text || isTextTooLong || qrError}
+              >
+                <Download size={18} />
+                Download
+              </Button>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
+                  variant="default"
+                  disabled={!text || isTextTooLong || qrError}
+                >
+                  <span className="mr-1 flex items-center gap-1">
+                    {getFormatIcon()}
+                    {downloadFormat.toUpperCase()}
+                  </span>
+                  <ChevronDown size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+            </div>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setDownloadFormat('png')}>
+                <FileImage size={16} className="mr-2" />
+                PNG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDownloadFormat('jpg')}>
+                <Image size={16} className="mr-2" />
+                JPG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
+                <FileCode size={16} className="mr-2" />
+                SVG
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
+                <FileText size={16} className="mr-2" />
+                PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Input field and customization options in the right column on desktop */}
+      <div className="w-full lg:w-1/2 space-y-6">
+        {/* Input field with paste button */}
+        <div className="space-y-2">
           <Label htmlFor="qr-text">Enter text or URL</Label>
           <div className="relative">
             <Textarea
@@ -351,10 +401,7 @@ const QrCodeGenerator = () => {
             {qrError && !isTextTooLong && ' (content too complex for QR code)'}
           </div>
         </div>
-      </div>
-
-      {/* Input field and customization options in the right column on desktop */}
-      <div className="w-full lg:w-1/2 space-y-6">
+        
         {/* Customization Options */}
         <div className="space-y-6">
           {/* Colors Selection - responsive layout */}
@@ -426,53 +473,6 @@ const QrCodeGenerator = () => {
               step={1}
               onValueChange={(value) => setBorderSize(value[0])}
             />
-          </div>
-
-          {/* Download Button with Format Selection moved to bottom */}
-          <div className="w-full">
-            <DropdownMenu>
-              <div className="flex">
-                <Button 
-                  onClick={handleDownload} 
-                  className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
-                  disabled={!text || isTextTooLong || qrError}
-                >
-                  <Download size={18} />
-                  Download
-                </Button>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
-                    variant="default"
-                    disabled={!text || isTextTooLong || qrError}
-                  >
-                    <span className="mr-1 flex items-center gap-1">
-                      {getFormatIcon()}
-                      {downloadFormat.toUpperCase()}
-                    </span>
-                    <ChevronDown size={16} />
-                  </Button>
-                </DropdownMenuTrigger>
-              </div>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setDownloadFormat('png')}>
-                  <FileImage size={16} className="mr-2" />
-                  PNG
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDownloadFormat('jpg')}>
-                  <Image size={16} className="mr-2" />
-                  JPG
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
-                  <FileCode size={16} className="mr-2" />
-                  SVG
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
-                  <FileText size={16} className="mr-2" />
-                  PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
       </div>
