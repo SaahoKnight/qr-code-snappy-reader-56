@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +17,10 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Textarea } from '@/components/ui/textarea';
 
 const QrCodeGenerator = () => {
+  const isMobile = useIsMobile();
+  const { toast } = useToast();
+  const qrRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
   const [size, setSize] = useState(200);
   const [borderSize, setBorderSize] = useState(10);
@@ -26,10 +29,6 @@ const QrCodeGenerator = () => {
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [isTextTooLong, setIsTextTooLong] = useState(false);
   const [qrError, setQrError] = useState(false);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const qrRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
   const MAX_CHARS = 2048; // QR code text capacity limit
 
   // Reset error state when text changes
@@ -314,167 +313,183 @@ const QrCodeGenerator = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-8 w-full">
-      {/* Input field and customization options - now in the first column */}
-      <div className="w-full lg:w-1/2 space-y-6">
-        {/* Input field with paste button */}
-        <div className="space-y-2">
-          <Label htmlFor="qr-text">Enter text or URL</Label>
-          <div className="relative">
-            <Textarea
-              id="qr-text"
-              ref={inputRef}
-              placeholder="Enter text or paste URL"
-              value={text}
-              onChange={handleTextChange}
-              className={`w-full pr-10 resize-none ${isTextTooLong || qrError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-              rows={3}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-2 top-2"
-              onClick={handlePasteFromClipboard}
-              title="Paste from clipboard"
-            >
-              <Clipboard size={18} />
-            </Button>
-          </div>
-          <div className={`text-xs ${isTextTooLong || qrError ? 'text-red-500 font-medium' : 'text-muted-foreground'} text-right`}>
-            {text.length} / {MAX_CHARS} characters
-            {isTextTooLong && ' (text too long)'}
-            {qrError && !isTextTooLong && ' (content too complex for QR code)'}
+    <div className="flex flex-col w-full">
+      {/* QR Code Preview - render on top for mobile */}
+      {isMobile && (
+        <div className="mb-8 flex flex-col items-center w-full">
+          <div style={qrContainerStyle} ref={qrRef}>
+            <div style={qrWrapperStyle}>
+              {renderQrCode()}
+            </div>
           </div>
         </div>
-        
-        {/* Customization Options */}
-        <div className="space-y-6">
-          {/* Colors Selection - responsive layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Background Color</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="w-12 h-12 rounded cursor-pointer"
-                  title="Select background color"
-                />
-                <Input 
-                  type="text"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
+      )}
+
+      <div className="flex flex-col lg:flex-row gap-8 w-full">
+        {/* Input field and customization options - first column */}
+        <div className="w-full lg:w-1/2 space-y-6">
+          {/* Input field with paste button */}
+          <div className="space-y-2">
+            <Label htmlFor="qr-text">Enter text or URL</Label>
+            <div className="relative">
+              <Textarea
+                id="qr-text"
+                ref={inputRef}
+                placeholder="Enter text or paste URL"
+                value={text}
+                onChange={handleTextChange}
+                className={`w-full pr-10 resize-none ${isTextTooLong || qrError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                rows={3}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-2"
+                onClick={handlePasteFromClipboard}
+                title="Paste from clipboard"
+              >
+                <Clipboard size={18} />
+              </Button>
             </div>
-            
-            <div className="space-y-2">
-              <Label>Foreground Color</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={fgColor}
-                  onChange={(e) => setFgColor(e.target.value)}
-                  className="w-12 h-12 rounded cursor-pointer"
-                  title="Select foreground color"
-                />
-                <Input 
-                  type="text"
-                  value={fgColor}
-                  onChange={(e) => setFgColor(e.target.value)}
-                  className="flex-1"
-                />
-              </div>
+            <div className={`text-xs ${isTextTooLong || qrError ? 'text-red-500 font-medium' : 'text-muted-foreground'} text-right`}>
+              {text.length} / {MAX_CHARS} characters
+              {isTextTooLong && ' (text too long)'}
+              {qrError && !isTextTooLong && ' (content too complex for QR code)'}
             </div>
           </div>
           
-          {/* Size Slider */}
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label htmlFor="qr-size">Size: {size}px</Label>
+          {/* Customization Options */}
+          <div className="space-y-6">
+            {/* Colors Selection - responsive layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Background Color</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={bgColor}
+                    onChange={(e) => setBgColor(e.target.value)}
+                    className="w-12 h-12 rounded cursor-pointer"
+                    title="Select background color"
+                  />
+                  <Input 
+                    type="text"
+                    value={bgColor}
+                    onChange={(e) => setBgColor(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Foreground Color</Label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={fgColor}
+                    onChange={(e) => setFgColor(e.target.value)}
+                    className="w-12 h-12 rounded cursor-pointer"
+                    title="Select foreground color"
+                  />
+                  <Input 
+                    type="text"
+                    value={fgColor}
+                    onChange={(e) => setFgColor(e.target.value)}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
             </div>
-            <Slider
-              id="qr-size"
-              value={[size]}
-              min={100}
-              max={300}
-              step={10}
-              onValueChange={(value) => setSize(value[0])}
-            />
-          </div>
+            
+            {/* Size Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label htmlFor="qr-size">Size: {size}px</Label>
+              </div>
+              <Slider
+                id="qr-size"
+                value={[size]}
+                min={100}
+                max={300}
+                step={10}
+                onValueChange={(value) => setSize(value[0])}
+              />
+            </div>
 
-          {/* Border Slider */}
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <Label htmlFor="qr-border">Border: {borderSize}px</Label>
+            {/* Border Slider */}
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <Label htmlFor="qr-border">Border: {borderSize}px</Label>
+              </div>
+              <Slider
+                id="qr-border"
+                value={[borderSize]}
+                min={0}
+                max={50}
+                step={1}
+                onValueChange={(value) => setBorderSize(value[0])}
+              />
             </div>
-            <Slider
-              id="qr-border"
-              value={[borderSize]}
-              min={0}
-              max={50}
-              step={1}
-              onValueChange={(value) => setBorderSize(value[0])}
-            />
           </div>
         </div>
-      </div>
 
-      {/* QR Code and download button - now in the second column */}
-      <div className="flex flex-col items-center w-full lg:w-1/2 gap-6">
-        <div style={qrContainerStyle} ref={qrRef}>
-          <div style={qrWrapperStyle}>
-            {renderQrCode()}
-          </div>
-        </div>
+        {/* QR Code and download button - second column for desktop only */}
+        <div className="flex flex-col items-center w-full lg:w-1/2 gap-6">
+          {/* QR Code - Only show on desktop */}
+          {!isMobile && (
+            <div style={qrContainerStyle} ref={qrRef}>
+              <div style={qrWrapperStyle}>
+                {renderQrCode()}
+              </div>
+            </div>
+          )}
 
-        {/* Download Button with Format Selection */}
-        <div className="w-full max-w-[300px]">
-          <DropdownMenu>
-            <div className="flex">
-              <Button 
-                onClick={handleDownload} 
-                className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
-                disabled={!text || isTextTooLong || qrError}
-              >
-                <Download size={18} />
-                Download
-              </Button>
-              <DropdownMenuTrigger asChild>
+          {/* Download Button with Format Selection */}
+          <div className="w-full max-w-[300px]">
+            <DropdownMenu>
+              <div className="flex">
                 <Button 
-                  className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
-                  variant="default"
+                  onClick={handleDownload} 
+                  className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
                   disabled={!text || isTextTooLong || qrError}
                 >
-                  <span className="mr-1 flex items-center gap-1">
-                    {getFormatIcon()}
-                    {downloadFormat.toUpperCase()}
-                  </span>
-                  <ChevronDown size={16} />
+                  <Download size={18} />
+                  Download
                 </Button>
-              </DropdownMenuTrigger>
-            </div>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setDownloadFormat('png')}>
-                <FileImage size={16} className="mr-2" />
-                PNG
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDownloadFormat('jpg')}>
-                <Image size={16} className="mr-2" />
-                JPG
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
-                <FileCode size={16} className="mr-2" />
-                SVG
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
-                <FileText size={16} className="mr-2" />
-                PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
+                    variant="default"
+                    disabled={!text || isTextTooLong || qrError}
+                  >
+                    <span className="mr-1 flex items-center gap-1">
+                      {getFormatIcon()}
+                      {downloadFormat.toUpperCase()}
+                    </span>
+                    <ChevronDown size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+              </div>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setDownloadFormat('png')}>
+                  <FileImage size={16} className="mr-2" />
+                  PNG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDownloadFormat('jpg')}>
+                  <Image size={16} className="mr-2" />
+                  JPG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
+                  <FileCode size={16} className="mr-2" />
+                  SVG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
+                  <FileText size={16} className="mr-2" />
+                  PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </div>
