@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,12 +20,10 @@ const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const qrRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
   const [size, setSize] = useState(200);
   const [borderSize, setBorderSize] = useState(10);
-  const [maxQrSize, setMaxQrSize] = useState(200);
   const [bgColor, setBgColor] = useState('#ffffff');
   const [fgColor, setFgColor] = useState('#000000');
   const [downloadFormat, setDownloadFormat] = useState('png');
@@ -33,57 +31,9 @@ const QrCodeGenerator = () => {
   const [qrError, setQrError] = useState(false);
   const MAX_CHARS = 2048; // QR code text capacity limit
 
-  // Dynamically calculate the max possible QR code size based on container width
-  useEffect(() => {
-    const calculateMaxSize = () => {
-      if (containerRef.current) {
-        // Get container width and set a reasonable maximum size
-        const containerWidth = containerRef.current.offsetWidth;
-        // Subtract padding (20px on each side)
-        const maxSize = Math.min(300, containerWidth - 40);
-        setMaxQrSize(maxSize);
-        // If current size is larger than max, adjust it
-        if (size + borderSize * 2 > maxSize) {
-          // Calculate what the QR size should be to stay within bounds
-          const newSize = Math.max(100, maxSize - borderSize * 2);
-          setSize(newSize);
-        }
-      }
-    };
-
-    calculateMaxSize();
-    // Add resize listener to recalculate when window size changes
-    window.addEventListener('resize', calculateMaxSize);
-    return () => window.removeEventListener('resize', calculateMaxSize);
-  }, [borderSize, size]);
-
   // Reset error state when text changes
   const resetErrorState = () => {
     setQrError(false);
-  };
-
-  // Update border size with constraints
-  const handleBorderSizeChange = (value: number[]) => {
-    const newBorderSize = value[0];
-    // Calculate maximum possible border size
-    const maxBorderSize = Math.floor((maxQrSize - 100) / 2); // Ensure QR code is at least 100px
-    const safeBorderSize = Math.min(newBorderSize, maxBorderSize);
-    
-    setBorderSize(safeBorderSize);
-    
-    // If we need to adjust the QR size to accommodate the border
-    if (size + safeBorderSize * 2 > maxQrSize) {
-      setSize(maxQrSize - safeBorderSize * 2);
-    }
-  };
-
-  // Update size with constraints
-  const handleSizeChange = (value: number[]) => {
-    const newSize = value[0];
-    // Ensure size + borders fits within container
-    const maxPossibleSize = maxQrSize - borderSize * 2;
-    const safeSize = Math.min(newSize, maxPossibleSize);
-    setSize(safeSize);
   };
 
   const handlePasteFromClipboard = async () => {
@@ -281,13 +231,13 @@ const QrCodeGenerator = () => {
     }
   };
 
-  // Update qrContainerStyle to use the containerRef and have a max-width
+  // Update the container style to properly show the border as padding without adding unnecessary borders
   const qrContainerStyle = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
     width: '100%',
-    maxWidth: `${maxQrSize}px`,
+    maxWidth: '300px',
     margin: '0 auto',
     aspectRatio: '1 / 1',
   };
@@ -298,9 +248,7 @@ const QrCodeGenerator = () => {
     backgroundColor: bgColor,
     display: 'inline-flex',
     justifyContent: 'center',
-    alignItems: 'center',
-    maxWidth: '100%',
-    boxSizing: 'border-box' as const
+    alignItems: 'center'
   };
 
   // Helper to get the appropriate icon for the selected format
@@ -370,7 +318,7 @@ const QrCodeGenerator = () => {
       {isMobile && (
         <div className="mb-8 flex flex-col items-center w-full">
           <div style={qrContainerStyle} ref={qrRef}>
-            <div style={qrWrapperStyle} ref={containerRef}>
+            <div style={qrWrapperStyle}>
               {renderQrCode()}
             </div>
           </div>
@@ -464,7 +412,7 @@ const QrCodeGenerator = () => {
                 min={100}
                 max={300}
                 step={10}
-                onValueChange={handleSizeChange}
+                onValueChange={(value) => setSize(value[0])}
               />
             </div>
 
@@ -479,7 +427,7 @@ const QrCodeGenerator = () => {
                 min={0}
                 max={50}
                 step={1}
-                onValueChange={handleBorderSizeChange}
+                onValueChange={(value) => setBorderSize(value[0])}
               />
             </div>
           </div>
@@ -490,7 +438,7 @@ const QrCodeGenerator = () => {
           {/* QR Code - Only show on desktop */}
           {!isMobile && (
             <div style={qrContainerStyle} ref={qrRef}>
-              <div style={qrWrapperStyle} ref={containerRef}>
+              <div style={qrWrapperStyle}>
                 {renderQrCode()}
               </div>
             </div>
