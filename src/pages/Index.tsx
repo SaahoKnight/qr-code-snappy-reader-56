@@ -12,7 +12,6 @@ const Index = () => {
           <p className="text-muted-foreground">Generate QR codes easily</p>
         </header>
 
-        {/* Remove any border-related classes from the Card */}
         <Card className="shadow-sm">
           <div className="p-4 sm:p-6">
             <QrCodeGenerator />
