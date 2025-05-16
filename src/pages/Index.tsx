@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card } from '@/components/ui/card';
 import QrCodeGenerator from '@/components/QrCodeGenerator';
 
 const Index = () => {
@@ -12,11 +11,9 @@ const Index = () => {
           <p className="text-muted-foreground">Generate QR codes easily</p>
         </header>
 
-        <Card className="shadow-sm">
-          <div className="p-4 sm:p-6">
-            <QrCodeGenerator />
-          </div>
-        </Card>
+        <div className="p-4 sm:p-6 bg-background rounded-lg shadow-sm">
+          <QrCodeGenerator />
+        </div>
 
         <footer className="mt-8 text-center text-sm text-muted-foreground">
           <p>Create QR codes instantly</p>
