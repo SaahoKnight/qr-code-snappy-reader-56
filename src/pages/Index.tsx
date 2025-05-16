@@ -11,7 +11,7 @@ const Index = () => {
           <p className="text-muted-foreground">Generate QR codes easily</p>
         </header>
 
-        <div className="p-4 sm:p-6 bg-background rounded-lg shadow-sm">
+        <div className="p-4 sm:p-6 bg-background rounded-lg">
           <QrCodeGenerator />
         </div>
 
