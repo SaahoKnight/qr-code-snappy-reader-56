@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle, Palette, SlidersHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -15,6 +15,8 @@ import {
 import jsPDF from 'jspdf';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Textarea } from '@/components/ui/textarea';
+import ColorDialog from './ColorDialog';
+import SizeDialog from './SizeDialog';
 
 const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
@@ -32,6 +34,10 @@ const QrCodeGenerator = () => {
   const [qrError, setQrError] = useState(false);
   const [scaleFactor, setScaleFactor] = useState(1);
   const MAX_CHARS = 2048; // QR code text capacity limit
+  
+  // Dialog states
+  const [colorDialogOpen, setColorDialogOpen] = useState(false);
+  const [sizeDialogOpen, setSizeDialogOpen] = useState(false);
 
   // Calculate scale factor based on viewport width
   useEffect(() => {
@@ -542,6 +548,28 @@ const QrCodeGenerator = () => {
             </div>
           )}
 
+          {/* New Row for Icon Buttons */}
+          <div className="flex justify-center gap-2 w-full max-w-[300px]">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full"
+              onClick={() => setColorDialogOpen(true)}
+              title="Customize colors"
+            >
+              <Palette size={18} />
+            </Button>
+            <Button
+              variant="outline" 
+              size="icon"
+              className="rounded-full"
+              onClick={() => setSizeDialogOpen(true)}
+              title="Adjust size and padding"
+            >
+              <SlidersHorizontal size={18} />
+            </Button>
+          </div>
+
           {/* Download Button with Format Selection */}
           <div className="w-full max-w-[300px]">
             <DropdownMenu>
@@ -590,6 +618,25 @@ const QrCodeGenerator = () => {
           </div>
         </div>
       </div>
+
+      {/* Dialogs */}
+      <ColorDialog 
+        open={colorDialogOpen}
+        onOpenChange={setColorDialogOpen}
+        bgColor={bgColor}
+        fgColor={fgColor}
+        onBgColorChange={setBgColor}
+        onFgColorChange={setFgColor}
+      />
+      
+      <SizeDialog
+        open={sizeDialogOpen}
+        onOpenChange={setSizeDialogOpen}
+        size={size}
+        borderSize={borderSize}
+        onSizeChange={setSize}
+        onBorderSizeChange={setBorderSize}
+      />
     </div>
   );
 };
