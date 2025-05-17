@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,32 @@ const QrCodeGenerator = () => {
         toast({
           title: 'Content Pasted',
           description: 'Text has been pasted from clipboard',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Paste Failed',
+        description: 'Unable to access clipboard content',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleColorPaste = async (setter: (value: string) => void) => {
+    try {
+      const text = await navigator.clipboard.readText();
+      // Simple validation to check if pasted content is a valid hex color
+      if (/^#([0-9A-F]{3}){1,2}$/i.test(text)) {
+        setter(text);
+        toast({
+          title: 'Color Pasted',
+          description: 'Color has been pasted from clipboard',
+        });
+      } else {
+        toast({
+          title: 'Invalid Color Format',
+          description: 'Please paste a valid hex color (e.g., #RRGGBB)',
+          variant: 'destructive',
         });
       }
     } catch (error) {
@@ -365,38 +392,64 @@ const QrCodeGenerator = () => {
               <div className="space-y-2">
                 <Label>Background Color</Label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="w-12 h-12 rounded cursor-pointer"
-                    title="Select background color"
-                  />
-                  <Input 
-                    type="text"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="flex-1"
-                  />
+                  <div className="border border-input rounded overflow-hidden">
+                    <input
+                      type="color"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="w-12 h-12 rounded cursor-pointer"
+                      title="Select background color"
+                    />
+                  </div>
+                  <div className="flex-1 relative">
+                    <Input 
+                      type="text"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => handleColorPaste(setBgColor)}
+                      title="Paste color from clipboard"
+                    >
+                      <Clipboard size={16} />
+                    </Button>
+                  </div>
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label>Foreground Color</Label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={fgColor}
-                    onChange={(e) => setFgColor(e.target.value)}
-                    className="w-12 h-12 rounded cursor-pointer"
-                    title="Select foreground color"
-                  />
-                  <Input 
-                    type="text"
-                    value={fgColor}
-                    onChange={(e) => setFgColor(e.target.value)}
-                    className="flex-1"
-                  />
+                  <div className="border border-input rounded overflow-hidden">
+                    <input
+                      type="color"
+                      value={fgColor}
+                      onChange={(e) => setFgColor(e.target.value)}
+                      className="w-12 h-12 rounded cursor-pointer"
+                      title="Select foreground color"
+                    />
+                  </div>
+                  <div className="flex-1 relative">
+                    <Input 
+                      type="text"
+                      value={fgColor}
+                      onChange={(e) => setFgColor(e.target.value)}
+                      className="pr-10"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => handleColorPaste(setFgColor)}
+                      title="Paste color from clipboard"
+                    >
+                      <Clipboard size={16} />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
