@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle, Palette, SlidersHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -15,7 +17,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Textarea } from '@/components/ui/textarea';
 import ColorDialog from './ColorDialog';
 import SizeDialog from './SizeDialog';
-import { Label } from '@/components/ui/label';
 
 const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
@@ -529,23 +530,25 @@ const QrCodeGenerator = () => {
           </div>
         </div>
 
-        {/* QR Code and download button - second column */}
+        {/* QR Code and download button - second column for desktop only */}
         <div className="flex flex-col items-center w-full lg:w-1/2 gap-6">
-          {/* QR Code */}
-          <div className="w-full" style={{maxWidth: '300px'}}>
-            <div style={qrContainerStyle} ref={qrContainerRef}>
-              <div style={qrWrapperStyle} ref={qrRef}>
-                {renderQrCode()}
+          {/* QR Code - Only show on desktop */}
+          {!isMobile && (
+            <div className="w-full" style={{maxWidth: '300px'}}>
+              <div style={qrContainerStyle} ref={qrContainerRef}>
+                <div style={qrWrapperStyle} ref={qrRef}>
+                  {renderQrCode()}
+                </div>
               </div>
+              {scaleFactor < 1 && (
+                <div className="text-xs text-muted-foreground mt-2 text-center">
+                  Scaled to {Math.round(scaleFactor * 100)}% to fit viewport
+                </div>
+              )}
             </div>
-            {scaleFactor < 1 && (
-              <div className="text-xs text-muted-foreground mt-2 text-center">
-                Scaled to {Math.round(scaleFactor * 100)}% to fit viewport
-              </div>
-            )}
-          </div>
+          )}
 
-          {/* New Row for Icon Buttons - Moved here directly under QR code */}
+          {/* New Row for Icon Buttons */}
           <div className="flex justify-center gap-2 w-full max-w-[300px]">
             <Button
               variant="outline"
