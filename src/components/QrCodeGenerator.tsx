@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const qrRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
   const [size, setSize] = useState(200);
@@ -29,7 +31,32 @@ const QrCodeGenerator = () => {
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [isTextTooLong, setIsTextTooLong] = useState(false);
   const [qrError, setQrError] = useState(false);
+  const [scalePercentage, setScalePercentage] = useState(100);
+  const [actualSize, setActualSize] = useState(size);
   const MAX_CHARS = 2048; // QR code text capacity limit
+  
+  // Calculate scale when size or borderSize changes
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    // Calculate available width (subtract padding)
+    const availableWidth = containerRef.current.offsetWidth - 40; // 20px padding on each side
+    
+    // Total requested size including borders
+    const requestedTotalSize = size + (borderSize * 2);
+    
+    if (requestedTotalSize > availableWidth) {
+      // Calculate scale to fit
+      const newScaleFactor = availableWidth / requestedTotalSize;
+      const newScalePercentage = Math.floor(newScaleFactor * 100);
+      setScalePercentage(newScalePercentage);
+      setActualSize(Math.floor(size * newScaleFactor));
+    } else {
+      // No scaling needed
+      setScalePercentage(100);
+      setActualSize(size);
+    }
+  }, [size, borderSize]);
 
   // Reset error state when text changes
   const resetErrorState = () => {
@@ -109,7 +136,7 @@ const QrCodeGenerator = () => {
 
     // Create a new canvas with border if needed
     const finalCanvas = document.createElement('canvas');
-    const finalSize = size + (borderSize * 2);
+    const finalSize = actualSize + (borderSize * 2);
     finalCanvas.width = finalSize;
     finalCanvas.height = finalSize;
     
@@ -123,7 +150,7 @@ const QrCodeGenerator = () => {
     // Draw QR code in the center
     ctx.drawImage(
       qrCanvas, 
-      borderSize, borderSize, size, size
+      borderSize, borderSize, actualSize, actualSize
     );
     
     // Handle download based on format
@@ -240,6 +267,7 @@ const QrCodeGenerator = () => {
     maxWidth: '300px',
     margin: '0 auto',
     aspectRatio: '1 / 1',
+    position: 'relative' as const,
   };
 
   // Create a separate style for the QR code wrapper with the border
@@ -248,28 +276,16 @@ const QrCodeGenerator = () => {
     backgroundColor: bgColor,
     display: 'inline-flex',
     justifyContent: 'center',
-    alignItems: 'center'
-  };
-
-  // Helper to get the appropriate icon for the selected format
-  const getFormatIcon = () => {
-    switch (downloadFormat) {
-      case 'jpg':
-        return <Image size={16} />;
-      case 'pdf':
-        return <FileText size={16} />;
-      case 'svg':
-        return <FileCode size={16} />;
-      default:
-        return <FileImage size={16} />;
-    }
+    alignItems: 'center',
+    transform: scalePercentage < 100 ? `scale(${scalePercentage/100})` : 'none',
+    transformOrigin: 'top left',
   };
 
   // Enhanced renderQrCode function to catch errors
   const renderQrCode = () => {
     if (!text) {
       return (
-        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
+        <div className="flex items-center justify-center bg-gray-100" style={{ width: actualSize, height: actualSize }}>
           <p className="text-sm text-gray-400">Enter text to generate QR</p>
         </div>
       );
@@ -277,7 +293,7 @@ const QrCodeGenerator = () => {
     
     if (isTextTooLong) {
       return (
-        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
+        <div className="flex items-center justify-center bg-gray-100" style={{ width: actualSize, height: actualSize }}>
           <p className="text-sm text-gray-400 text-center px-4">Text too long for QR code.<br/>Reduce to {MAX_CHARS} characters.</p>
         </div>
       );
@@ -285,24 +301,31 @@ const QrCodeGenerator = () => {
     
     try {
       return (
-        <QRCodeCanvas
-          value={text}
-          size={size}
-          bgColor={bgColor}
-          fgColor={fgColor}
-          level="L" // Changed from "H" to "L" for better capacity
-          includeMargin={false}
-          onError={() => {
-            setQrError(true);
-            console.error("QR Code generation error");
-          }}
-        />
+        <>
+          <QRCodeCanvas
+            value={text}
+            size={actualSize}
+            bgColor={bgColor}
+            fgColor={fgColor}
+            level="L" // Changed from "H" to "L" for better capacity
+            includeMargin={false}
+            onError={() => {
+              setQrError(true);
+              console.error("QR Code generation error");
+            }}
+          />
+          {scalePercentage < 100 && (
+            <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs py-1 text-center">
+              Scaled to {scalePercentage}% of {size}px
+            </div>
+          )}
+        </>
       );
     } catch (error) {
       console.error("QR Code generation error:", error);
       setQrError(true);
       return (
-        <div className="flex flex-col items-center justify-center bg-gray-100 p-4" style={{ width: size, height: size }}>
+        <div className="flex flex-col items-center justify-center bg-gray-100 p-4" style={{ width: actualSize, height: actualSize }}>
           <AlertTriangle className="text-red-500 mb-2" size={32} />
           <p className="text-sm text-gray-700 text-center">
             Cannot generate QR code.<br/>Text is too complex.
@@ -317,8 +340,8 @@ const QrCodeGenerator = () => {
       {/* QR Code Preview - render on top for mobile */}
       {isMobile && (
         <div className="mb-8 flex flex-col items-center w-full">
-          <div style={qrContainerStyle} ref={qrRef}>
-            <div style={qrWrapperStyle}>
+          <div style={qrContainerStyle} ref={containerRef}>
+            <div ref={qrRef} style={qrWrapperStyle}>
               {renderQrCode()}
             </div>
           </div>
@@ -404,7 +427,10 @@ const QrCodeGenerator = () => {
             {/* Size Slider */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label htmlFor="qr-size">Size: {size}px</Label>
+                <Label htmlFor="qr-size">
+                  Size: {size}px
+                  {scalePercentage < 100 && ` (displayed: ~${actualSize}px)`}
+                </Label>
               </div>
               <Slider
                 id="qr-size"
@@ -419,7 +445,10 @@ const QrCodeGenerator = () => {
             {/* Border Slider */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label htmlFor="qr-border">Border: {borderSize}px</Label>
+                <Label htmlFor="qr-border">
+                  Border: {borderSize}px
+                  {scalePercentage < 100 && ` (displayed: ~${Math.floor(borderSize * scalePercentage/100)}px)`}
+                </Label>
               </div>
               <Slider
                 id="qr-border"
@@ -437,8 +466,8 @@ const QrCodeGenerator = () => {
         <div className="flex flex-col items-center w-full lg:w-1/2 gap-6">
           {/* QR Code - Only show on desktop */}
           {!isMobile && (
-            <div style={qrContainerStyle} ref={qrRef}>
-              <div style={qrWrapperStyle}>
+            <div style={qrContainerStyle} ref={containerRef}>
+              <div ref={qrRef} style={qrWrapperStyle}>
                 {renderQrCode()}
               </div>
             </div>
