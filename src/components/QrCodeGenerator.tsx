@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const qrRef = useRef<HTMLDivElement>(null);
+  const qrContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [text, setText] = useState('');
   const [size, setSize] = useState(200);
@@ -29,7 +31,35 @@ const QrCodeGenerator = () => {
   const [downloadFormat, setDownloadFormat] = useState('png');
   const [isTextTooLong, setIsTextTooLong] = useState(false);
   const [qrError, setQrError] = useState(false);
+  const [scaleFactor, setScaleFactor] = useState(1);
   const MAX_CHARS = 2048; // QR code text capacity limit
+
+  // Calculate scale factor based on viewport width
+  useEffect(() => {
+    const updateScaleFactor = () => {
+      if (!qrContainerRef.current) return;
+      
+      // Calculate total desired size (QR size + padding on both sides)
+      const totalDesiredWidth = size + (borderSize * 2);
+      
+      // Get available container width (minus 20px safety margin)
+      const containerWidth = qrContainerRef.current.clientWidth - 20;
+      
+      if (totalDesiredWidth > containerWidth && containerWidth > 0) {
+        // Need to scale down
+        setScaleFactor(containerWidth / totalDesiredWidth);
+      } else {
+        // No scaling needed
+        setScaleFactor(1);
+      }
+    };
+
+    updateScaleFactor();
+    
+    // Add resize listener
+    window.addEventListener('resize', updateScaleFactor);
+    return () => window.removeEventListener('resize', updateScaleFactor);
+  }, [size, borderSize]);
 
   // Reset error state when text changes
   const resetErrorState = () => {
@@ -268,13 +298,16 @@ const QrCodeGenerator = () => {
     aspectRatio: '1 / 1',
   };
 
-  // Create a separate style for the QR code wrapper with the border
+  // Create a separate style for the QR code wrapper with the border and scaling
   const qrWrapperStyle = {
     padding: `${borderSize}px`,
     backgroundColor: bgColor,
     display: 'inline-flex',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    transform: `scale(${scaleFactor})`,
+    transformOrigin: 'center',
+    transition: 'transform 0.2s ease'
   };
 
   // Helper to get the appropriate icon for the selected format
@@ -343,11 +376,16 @@ const QrCodeGenerator = () => {
       {/* QR Code Preview - render on top for mobile */}
       {isMobile && (
         <div className="mb-8 flex flex-col items-center w-full">
-          <div style={qrContainerStyle} ref={qrRef}>
-            <div style={qrWrapperStyle}>
+          <div style={qrContainerStyle} ref={qrContainerRef}>
+            <div style={qrWrapperStyle} ref={qrRef}>
               {renderQrCode()}
             </div>
           </div>
+          {scaleFactor < 1 && (
+            <div className="text-xs text-muted-foreground mt-2">
+              Scaled to {Math.round(scaleFactor * 100)}% to fit viewport
+            </div>
+          )}
         </div>
       )}
 
@@ -489,10 +527,17 @@ const QrCodeGenerator = () => {
         <div className="flex flex-col items-center w-full lg:w-1/2 gap-6">
           {/* QR Code - Only show on desktop */}
           {!isMobile && (
-            <div style={qrContainerStyle} ref={qrRef}>
-              <div style={qrWrapperStyle}>
-                {renderQrCode()}
+            <div className="w-full" style={{maxWidth: '300px'}}>
+              <div style={qrContainerStyle} ref={qrContainerRef}>
+                <div style={qrWrapperStyle} ref={qrRef}>
+                  {renderQrCode()}
+                </div>
               </div>
+              {scaleFactor < 1 && (
+                <div className="text-xs text-muted-foreground mt-2 text-center">
+                  Scaled to {Math.round(scaleFactor * 100)}% to fit viewport
+                </div>
+              )}
             </div>
           )}
 
