@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -371,7 +370,7 @@ const QrCodeGenerator = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-2"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2"
                 onClick={handlePasteFromClipboard}
                 title="Paste from clipboard"
               >
