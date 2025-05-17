@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -31,9 +30,6 @@ const QrCodeGenerator = () => {
   const [isTextTooLong, setIsTextTooLong] = useState(false);
   const [qrError, setQrError] = useState(false);
   const MAX_CHARS = 2048; // QR code text capacity limit
-
-  // Calculate the display size - always 75% of the selected size
-  const displaySize = Math.round(size * 0.75);
 
   // Reset error state when text changes
   const resetErrorState = () => {
@@ -113,7 +109,7 @@ const QrCodeGenerator = () => {
 
     // Create a new canvas with border if needed
     const finalCanvas = document.createElement('canvas');
-    const finalSize = size + (borderSize * 2); // Use full size for download
+    const finalSize = size + (borderSize * 2);
     finalCanvas.width = finalSize;
     finalCanvas.height = finalSize;
     
@@ -124,7 +120,7 @@ const QrCodeGenerator = () => {
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, finalSize, finalSize);
     
-    // Draw QR code in the center - use the full size for download
+    // Draw QR code in the center
     ctx.drawImage(
       qrCanvas, 
       borderSize, borderSize, size, size
@@ -273,7 +269,7 @@ const QrCodeGenerator = () => {
   const renderQrCode = () => {
     if (!text) {
       return (
-        <div className="flex items-center justify-center bg-gray-100" style={{ width: displaySize, height: displaySize }}>
+        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
           <p className="text-sm text-gray-400">Enter text to generate QR</p>
         </div>
       );
@@ -281,7 +277,7 @@ const QrCodeGenerator = () => {
     
     if (isTextTooLong) {
       return (
-        <div className="flex items-center justify-center bg-gray-100" style={{ width: displaySize, height: displaySize }}>
+        <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
           <p className="text-sm text-gray-400 text-center px-4">Text too long for QR code.<br/>Reduce to {MAX_CHARS} characters.</p>
         </div>
       );
@@ -291,7 +287,7 @@ const QrCodeGenerator = () => {
       return (
         <QRCodeCanvas
           value={text}
-          size={displaySize}
+          size={size}
           bgColor={bgColor}
           fgColor={fgColor}
           level="L" // Changed from "H" to "L" for better capacity
@@ -306,7 +302,7 @@ const QrCodeGenerator = () => {
       console.error("QR Code generation error:", error);
       setQrError(true);
       return (
-        <div className="flex flex-col items-center justify-center bg-gray-100 p-4" style={{ width: displaySize, height: displaySize }}>
+        <div className="flex flex-col items-center justify-center bg-gray-100 p-4" style={{ width: size, height: size }}>
           <AlertTriangle className="text-red-500 mb-2" size={32} />
           <p className="text-sm text-gray-700 text-center">
             Cannot generate QR code.<br/>Text is too complex.
@@ -408,7 +404,7 @@ const QrCodeGenerator = () => {
             {/* Size Slider */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label htmlFor="qr-size">Size: {size}px (displayed at {displaySize}px)</Label>
+                <Label htmlFor="qr-size">Size: {size}px</Label>
               </div>
               <Slider
                 id="qr-size"
