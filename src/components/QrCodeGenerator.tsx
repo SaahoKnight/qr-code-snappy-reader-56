@@ -42,8 +42,8 @@ const QrCodeGenerator = () => {
       // Calculate total desired size (QR size + padding on both sides)
       const totalDesiredWidth = size + (borderSize * 2);
       
-      // Get available container width (minus 20px safety margin)
-      const containerWidth = qrContainerRef.current.clientWidth - 20;
+      // Get available container width (minus 10px safety margin)
+      const containerWidth = qrContainerRef.current.clientWidth - 10;
       
       if (totalDesiredWidth > containerWidth && containerWidth > 0) {
         // Need to scale down
