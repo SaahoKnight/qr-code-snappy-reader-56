@@ -392,14 +392,13 @@ const QrCodeGenerator = () => {
               <div className="space-y-2">
                 <Label>Background Color</Label>
                 <div className="flex items-center gap-2">
-                  <div className="border border-input rounded overflow-hidden" style={{ width: '48px', height: '48px', flexShrink: 0 }}>
+                  <div className="border border-input rounded overflow-hidden">
                     <input
                       type="color"
                       value={bgColor}
                       onChange={(e) => setBgColor(e.target.value)}
-                      className="w-full h-full cursor-pointer"
+                      className="w-12 h-12 rounded cursor-pointer"
                       title="Select background color"
-                      style={{ padding: 0, margin: 0, border: 'none' }}
                     />
                   </div>
                   <div className="flex-1 relative">
@@ -425,14 +424,13 @@ const QrCodeGenerator = () => {
               <div className="space-y-2">
                 <Label>Foreground Color</Label>
                 <div className="flex items-center gap-2">
-                  <div className="border border-input rounded overflow-hidden" style={{ width: '48px', height: '48px', flexShrink: 0 }}>
+                  <div className="border border-input rounded overflow-hidden">
                     <input
                       type="color"
                       value={fgColor}
                       onChange={(e) => setFgColor(e.target.value)}
-                      className="w-full h-full cursor-pointer"
+                      className="w-12 h-12 rounded cursor-pointer"
                       title="Select foreground color"
-                      style={{ padding: 0, margin: 0, border: 'none' }}
                     />
                   </div>
                   <div className="flex-1 relative">
