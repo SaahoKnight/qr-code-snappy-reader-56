@@ -416,10 +416,10 @@ const QrCodeGenerator = () => {
               />
             </div>
 
-            {/* Border Slider */}
+            {/* Padding Slider (previously Border) */}
             <div className="space-y-2">
               <div className="flex justify-between">
-                <Label htmlFor="qr-border">Border: {borderSize}px</Label>
+                <Label htmlFor="qr-border">Padding: {borderSize}px</Label>
               </div>
               <Slider
                 id="qr-border"
