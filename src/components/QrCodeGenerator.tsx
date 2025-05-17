@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -332,6 +331,22 @@ const QrCodeGenerator = () => {
           </p>
         </div>
       );
+    }
+  };
+
+  // Add the missing getFormatIcon function
+  const getFormatIcon = () => {
+    switch (downloadFormat) {
+      case 'png':
+        return <FileImage size={16} className="mr-1" />;
+      case 'jpg':
+        return <Image size={16} className="mr-1" />;
+      case 'svg':
+        return <FileCode size={16} className="mr-1" />;
+      case 'pdf':
+        return <FileText size={16} className="mr-1" />;
+      default:
+        return <FileImage size={16} className="mr-1" />;
     }
   };
 
