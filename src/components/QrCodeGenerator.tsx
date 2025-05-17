@@ -306,7 +306,9 @@ const QrCodeGenerator = () => {
     alignItems: 'center',
     transform: `scale(${scaleFactor})`,
     transformOrigin: 'center',
-    transition: 'transform 0.2s ease'
+    transition: 'transform 0.2s ease',
+    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 6px 12px rgba(0, 0, 0, 0.08)', // Added shadow for lifted effect
+    borderRadius: '8px', // Added rounded corners to enhance the lifted appearance
   };
 
   // Helper to get the appropriate icon for the selected format
