@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -42,8 +41,8 @@ const QrCodeGenerator = () => {
       // Calculate total desired size (QR size + padding on both sides)
       const totalDesiredWidth = size + (borderSize * 2);
       
-      // Get available container width (minus 10px safety margin)
-      const containerWidth = qrContainerRef.current.clientWidth - 10;
+      // Get available container width (with no safety margin)
+      const containerWidth = qrContainerRef.current.clientWidth;
       
       if (totalDesiredWidth > containerWidth && containerWidth > 0) {
         // Need to scale down
