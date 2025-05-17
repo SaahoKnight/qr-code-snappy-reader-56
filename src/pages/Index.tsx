@@ -1,6 +1,7 @@
 
 import React from 'react';
 import QrCodeGenerator from '@/components/QrCodeGenerator';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   return (
@@ -14,11 +15,9 @@ const Index = () => {
         <div className="p-4 sm:p-6 bg-background rounded-lg">
           <QrCodeGenerator />
         </div>
-
-        <footer className="mt-8 text-center text-sm text-muted-foreground">
-          <p>Create QR codes instantly</p>
-        </footer>
       </div>
+      
+      <Footer />
     </div>
   );
 };
