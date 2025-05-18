@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Copyright } from 'lucide-react';
 
 const Footer = () => {
@@ -14,16 +15,19 @@ const Footer = () => {
             <span>{currentYear} QR Code Snappy. All rights reserved.</span>
           </div>
           
-          <div className="flex gap-6">
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+          <div className="flex flex-wrap gap-6">
+            <Link to="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              About Us
+            </Link>
+            <Link to="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Terms of Use
-            </a>
-            <a href="#" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
               Contact
-            </a>
+            </Link>
           </div>
         </div>
       </div>
