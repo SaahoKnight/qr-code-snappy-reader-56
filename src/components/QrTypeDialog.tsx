@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Check } from 'lucide-react';
+import { Check, FileEdit, Mail, Phone, User, FileCode } from 'lucide-react';
 
 export type QrCodeType = 'text' | 'url' | 'contact' | 'email' | 'phone';
 
@@ -17,33 +17,39 @@ interface QrTypeItem {
   id: QrCodeType;
   title: string;
   description: string;
+  icon: React.ReactNode;
 }
 
 const qrTypes: QrTypeItem[] = [
   {
     id: 'text',
     title: 'Plain Text',
-    description: 'Generate a QR code from plain text or any content'
+    description: 'Generate a QR code from plain text or any content',
+    icon: <FileEdit size={16} />
   },
   {
     id: 'url',
     title: 'URL / Website',
-    description: 'Create a QR code that opens a webpage'
+    description: 'Create a QR code that opens a webpage',
+    icon: <FileCode size={16} />
   },
   {
     id: 'contact',
     title: 'Contact Information',
-    description: 'Share contact details via QR code'
+    description: 'Share contact details via QR code',
+    icon: <User size={16} />
   },
   {
     id: 'email',
     title: 'Email Address',
-    description: 'Create a QR code that starts an email'
+    description: 'Create a QR code that starts an email',
+    icon: <Mail size={16} />
   },
   {
     id: 'phone',
     title: 'Phone Number',
-    description: 'Generate a QR code for a phone number'
+    description: 'Generate a QR code for a phone number',
+    icon: <Phone size={16} />
   }
 ];
 
@@ -81,9 +87,12 @@ const QrTypeDialog = ({
                 onOpenChange(false);
               }}
             >
-              <div className="flex flex-col items-start text-left">
-                <span className="font-medium">{type.title}</span>
-                <span className="text-xs text-muted-foreground">{type.description}</span>
+              <div className="flex items-center gap-2">
+                {type.icon}
+                <div className="flex flex-col items-start text-left">
+                  <span className="font-medium">{type.title}</span>
+                  <span className="text-xs text-muted-foreground">{type.description}</span>
+                </div>
               </div>
               {selectedType === type.id && <Check className="h-4 w-4" />}
             </Button>
