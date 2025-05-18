@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle, Palette, SlidersHorizontal, FileEdit, Mail, Phone, User, List } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle, Palette, SlidersHorizontal, FileEdit, Mail, Phone, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -629,15 +629,6 @@ END:VCARD`;
             >
               <SlidersHorizontal size={18} />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full"
-              onClick={() => setQrTypeDialogOpen(true)}
-              title={`QR code type: ${getQrTypeName()}`}
-            >
-              {getQrTypeIcon()}
-            </Button>
           </div>
           
           {scaleFactor < 1 && (
@@ -651,13 +642,28 @@ END:VCARD`;
       <div className="flex flex-col lg:flex-row gap-8 w-full">
         {/* Input field and customization options - first column */}
         <div className="w-full lg:w-1/2 space-y-6">
-          {/* Type selection button - we'll replace this with a more compact version */}
+          {/* Type selection button */}
+          <div>
+            <Label className="mb-2 block">QR Code Type</Label>
+            <Button 
+              variant="outline"
+              className="w-full flex justify-between items-center"
+              onClick={() => setQrTypeDialogOpen(true)}
+            >
+              <div className="flex items-center gap-2">
+                {getQrTypeIcon()}
+                <span>{getQrTypeName()}</span>
+              </div>
+              <ChevronDown size={16} />
+            </Button>
+          </div>
           
           {/* Input form based on selected type */}
           {renderInputForm()}
           
           {/* Customization Options - Only show on desktop */}
-          <div className="space-y-6">
+          {!isMobile && (
+            <div className="space-y-6">
               {/* Colors Selection - responsive layout */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -755,6 +761,7 @@ END:VCARD`;
                 />
               </div>
             </div>
+          )}
         </div>
 
         {/* QR Code and download button - second column for desktop only */}
@@ -795,15 +802,6 @@ END:VCARD`;
                 title="Adjust size and padding"
               >
                 <SlidersHorizontal size={18} />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full"
-                onClick={() => setQrTypeDialogOpen(true)}
-                title={`QR code type: ${getQrTypeName()}`}
-              >
-                {getQrTypeIcon()}
               </Button>
             </div>
           )}
