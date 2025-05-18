@@ -5,12 +5,12 @@ import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerHeader, 
-  DrawerTitle, 
-  DrawerTrigger 
-} from '@/components/ui/drawer';
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger 
+} from '@/components/ui/sheet';
 
 const navItems = [
   { title: 'Home', path: '/' },
@@ -24,23 +24,21 @@ const Header = () => {
   const isMobile = useIsMobile();
 
   return (
-    <header className="mb-6">
+    <header className="mb-6 relative">
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-3xl font-bold tracking-tight">QR Code Snappy</h1>
-        
         {isMobile ? (
-          <Drawer>
-            <DrawerTrigger asChild>
+          <Sheet>
+            <SheetTrigger asChild>
               <Button variant="outline" size="icon">
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Open menu</span>
               </Button>
-            </DrawerTrigger>
-            <DrawerContent>
-              <DrawerHeader>
-                <DrawerTitle>Navigation</DrawerTitle>
-              </DrawerHeader>
-              <div className="p-4">
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Navigation</SheetTitle>
+              </SheetHeader>
+              <div className="py-4">
                 <nav className="flex flex-col space-y-1">
                   {navItems.map((item) => (
                     <Link
@@ -53,9 +51,16 @@ const Header = () => {
                   ))}
                 </nav>
               </div>
-            </DrawerContent>
-          </Drawer>
+            </SheetContent>
+          </Sheet>
         ) : null}
+
+        <div className="absolute left-1/2 transform -translate-x-1/2">
+          <h1 className="text-3xl font-bold tracking-tight">QR Code Snappy</h1>
+        </div>
+
+        {/* Empty div to balance the layout when drawer button is visible */}
+        <div className="w-10"></div>
       </div>
 
       {!isMobile && (
@@ -73,8 +78,6 @@ const Header = () => {
           </div>
         </nav>
       )}
-
-      <p className="text-muted-foreground text-center">Generate QR codes easily</p>
     </header>
   );
 };
