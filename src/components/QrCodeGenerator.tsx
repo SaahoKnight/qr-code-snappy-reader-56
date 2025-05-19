@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -16,14 +17,14 @@ import jsPDF from 'jspdf';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetClose,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
@@ -397,24 +398,24 @@ const QrCodeGenerator = () => {
             </div>
           )}
           
-          {/* Mobile-only controls buttons */}
+          {/* Mobile-only controls buttons - changed from Sheet to Dialog */}
           <div className="flex justify-center gap-4 mt-4 w-full">
-            {/* Color Selection Sheet */}
-            <Sheet>
-              <SheetTrigger asChild>
+            {/* Color Selection Dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
                 <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
                   <Palette size={18} />
                   Colors
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-[80vh]">
-                <SheetHeader className="mb-4">
-                  <SheetTitle>Color Settings</SheetTitle>
-                  <SheetDescription>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Color Settings</DialogTitle>
+                  <DialogDescription>
                     Customize the colors of your QR code
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="space-y-6">
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
                   <div className="space-y-2">
                     <Label>Background Color</Label>
                     <div className="flex items-center gap-2">
@@ -479,29 +480,29 @@ const QrCodeGenerator = () => {
                     </div>
                   </div>
 
-                  <SheetClose asChild>
+                  <DialogClose asChild>
                     <Button className="w-full">Apply Colors</Button>
-                  </SheetClose>
+                  </DialogClose>
                 </div>
-              </SheetContent>
-            </Sheet>
+              </DialogContent>
+            </Dialog>
             
-            {/* Size Selection Sheet */}
-            <Sheet>
-              <SheetTrigger asChild>
+            {/* Size Selection Dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
                 <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
                   <Square size={18} />
                   Size
                 </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom" className="h-[80vh]">
-                <SheetHeader className="mb-4">
-                  <SheetTitle>Size Settings</SheetTitle>
-                  <SheetDescription>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Size Settings</DialogTitle>
+                  <DialogDescription>
                     Adjust the size and padding of your QR code
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="space-y-6">
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
                   {/* Size Slider */}
                   <div className="space-y-2">
                     <div className="flex justify-between">
@@ -532,12 +533,12 @@ const QrCodeGenerator = () => {
                     />
                   </div>
 
-                  <SheetClose asChild>
+                  <DialogClose asChild>
                     <Button className="w-full">Apply Size</Button>
-                  </SheetClose>
+                  </DialogClose>
                 </div>
-              </SheetContent>
-            </Sheet>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       )}
