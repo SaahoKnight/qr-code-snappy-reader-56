@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -381,50 +382,6 @@ const QrCodeGenerator = () => {
     }
   };
 
-  // Format selection button for mobile view
-  const renderFormatButtons = () => {
-    return (
-      <div className="flex flex-wrap gap-2 justify-center mt-4">
-        <Button
-          variant={downloadFormat === 'png' ? 'default' : 'outline'}
-          size="sm"
-          className="flex items-center gap-1"
-          onClick={() => setDownloadFormat('png')}
-        >
-          <FileImage size={16} />
-          PNG
-        </Button>
-        <Button
-          variant={downloadFormat === 'jpg' ? 'default' : 'outline'}
-          size="sm"
-          className="flex items-center gap-1"
-          onClick={() => setDownloadFormat('jpg')}
-        >
-          <Image size={16} />
-          JPG
-        </Button>
-        <Button
-          variant={downloadFormat === 'svg' ? 'default' : 'outline'}
-          size="sm"
-          className="flex items-center gap-1"
-          onClick={() => setDownloadFormat('svg')}
-        >
-          <FileCode size={16} />
-          SVG
-        </Button>
-        <Button
-          variant={downloadFormat === 'pdf' ? 'default' : 'outline'}
-          size="sm"
-          className="flex items-center gap-1"
-          onClick={() => setDownloadFormat('pdf')}
-        >
-          <FileText size={16} />
-          PDF
-        </Button>
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col w-full">
       {/* QR Code Preview - render on top for mobile */}
@@ -583,9 +540,6 @@ const QrCodeGenerator = () => {
               </SheetContent>
             </Sheet>
           </div>
-          
-          {/* New Format Selection Row for Mobile */}
-          {renderFormatButtons()}
         </div>
       )}
 
@@ -743,20 +697,51 @@ const QrCodeGenerator = () => {
             </div>
           )}
 
-          {/* Download Button - Modified without Format Selection dropdown */}
+          {/* Download Button with Format Selection */}
           <div className="w-full max-w-[300px]">
-            {/* Desktop format buttons */}
-            {!isMobile && renderFormatButtons()}
-            
-            {/* Download button without dropdown */}
-            <Button 
-              onClick={handleDownload} 
-              className="flex-1 flex items-center justify-center gap-2 w-full mt-4"
-              disabled={!text || isTextTooLong || qrError}
-            >
-              <Download size={18} />
-              Download as {downloadFormat.toUpperCase()}
-            </Button>
+            <DropdownMenu>
+              <div className="flex">
+                <Button 
+                  onClick={handleDownload} 
+                  className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
+                  disabled={!text || isTextTooLong || qrError}
+                >
+                  <Download size={18} />
+                  Download
+                </Button>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
+                    variant="default"
+                    disabled={!text || isTextTooLong || qrError}
+                  >
+                    <span className="mr-1 flex items-center gap-1">
+                      {getFormatIcon()}
+                      {downloadFormat.toUpperCase()}
+                    </span>
+                    <ChevronDown size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+              </div>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setDownloadFormat('png')}>
+                  <FileImage size={16} className="mr-2" />
+                  PNG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDownloadFormat('jpg')}>
+                  <Image size={16} className="mr-2" />
+                  JPG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDownloadFormat('svg')}>
+                  <FileCode size={16} className="mr-2" />
+                  SVG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDownloadFormat('pdf')}>
+                  <FileText size={16} className="mr-2" />
+                  PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
