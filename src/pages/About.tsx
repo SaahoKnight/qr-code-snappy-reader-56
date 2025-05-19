@@ -1,12 +1,17 @@
 
 import React from 'react';
 import Footer from '@/components/Footer';
+import NavDrawer from '@/components/NavDrawer';
 
 const About = () => {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-10 w-full text-center py-4 bg-background border-b shadow-sm">
+      <header className="sticky top-0 z-10 w-full flex items-center justify-between py-4 px-4 bg-background border-b shadow-sm">
+        <div>
+          <NavDrawer />
+        </div>
         <h1 className="text-3xl font-bold tracking-tight">About Us</h1>
+        <div className="w-10"></div> {/* Empty div for centering title */}
       </header>
 
       <main className="flex-1 w-full max-w-4xl mx-auto p-4 sm:p-6 pt-8">
