@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle, Palette, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -15,6 +16,15 @@ import {
 import jsPDF from 'jspdf';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 
 const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
@@ -387,6 +397,149 @@ const QrCodeGenerator = () => {
               Scaled to {Math.round(scaleFactor * 100)}% to fit viewport
             </div>
           )}
+          
+          {/* Mobile-only controls buttons */}
+          <div className="flex justify-center gap-4 mt-4 w-full">
+            {/* Color Selection Sheet */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
+                  <Palette size={18} />
+                  Colors
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[80vh]">
+                <SheetHeader className="mb-4">
+                  <SheetTitle>Color Settings</SheetTitle>
+                  <SheetDescription>
+                    Customize the colors of your QR code
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>Background Color</Label>
+                    <div className="flex items-center gap-2">
+                      <div className="border border-input rounded overflow-hidden">
+                        <input
+                          type="color"
+                          value={bgColor}
+                          onChange={(e) => setBgColor(e.target.value)}
+                          className="w-12 h-12 rounded cursor-pointer"
+                          title="Select background color"
+                        />
+                      </div>
+                      <div className="flex-1 relative">
+                        <Input 
+                          type="text"
+                          value={bgColor}
+                          onChange={(e) => setBgColor(e.target.value)}
+                          className="pr-10"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full"
+                          onClick={() => handleColorPaste(setBgColor)}
+                          title="Paste color from clipboard"
+                        >
+                          <Clipboard size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Foreground Color</Label>
+                    <div className="flex items-center gap-2">
+                      <div className="border border-input rounded overflow-hidden">
+                        <input
+                          type="color"
+                          value={fgColor}
+                          onChange={(e) => setFgColor(e.target.value)}
+                          className="w-12 h-12 rounded cursor-pointer"
+                          title="Select foreground color"
+                        />
+                      </div>
+                      <div className="flex-1 relative">
+                        <Input 
+                          type="text"
+                          value={fgColor}
+                          onChange={(e) => setFgColor(e.target.value)}
+                          className="pr-10"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0 h-full"
+                          onClick={() => handleColorPaste(setFgColor)}
+                          title="Paste color from clipboard"
+                        >
+                          <Clipboard size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <SheetClose asChild>
+                    <Button className="w-full">Apply Colors</Button>
+                  </SheetClose>
+                </div>
+              </SheetContent>
+            </Sheet>
+            
+            {/* Size Selection Sheet */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
+                  <Square size={18} />
+                  Size
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="h-[80vh]">
+                <SheetHeader className="mb-4">
+                  <SheetTitle>Size Settings</SheetTitle>
+                  <SheetDescription>
+                    Adjust the size and padding of your QR code
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="space-y-6">
+                  {/* Size Slider */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="mobile-qr-size">Size: {size}px</Label>
+                    </div>
+                    <Slider
+                      id="mobile-qr-size"
+                      value={[size]}
+                      min={100}
+                      max={300}
+                      step={10}
+                      onValueChange={(value) => setSize(value[0])}
+                    />
+                  </div>
+
+                  {/* Padding Slider */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="mobile-qr-border">Padding: {borderSize}px</Label>
+                    </div>
+                    <Slider
+                      id="mobile-qr-border"
+                      value={[borderSize]}
+                      min={0}
+                      max={50}
+                      step={1}
+                      onValueChange={(value) => setBorderSize(value[0])}
+                    />
+                  </div>
+
+                  <SheetClose asChild>
+                    <Button className="w-full">Apply Size</Button>
+                  </SheetClose>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       )}
 
@@ -423,105 +576,107 @@ const QrCodeGenerator = () => {
             </div>
           </div>
           
-          {/* Customization Options */}
-          <div className="space-y-6">
-            {/* Colors Selection - responsive layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Background Color</Label>
-                <div className="flex items-center gap-2">
-                  <div className="border border-input rounded overflow-hidden">
-                    <input
-                      type="color"
-                      value={bgColor}
-                      onChange={(e) => setBgColor(e.target.value)}
-                      className="w-12 h-12 rounded cursor-pointer"
-                      title="Select background color"
-                    />
+          {/* Customization Options - only show on desktop */}
+          {!isMobile && (
+            <div className="space-y-6">
+              {/* Colors Selection - responsive layout */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Background Color</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="border border-input rounded overflow-hidden">
+                      <input
+                        type="color"
+                        value={bgColor}
+                        onChange={(e) => setBgColor(e.target.value)}
+                        className="w-12 h-12 rounded cursor-pointer"
+                        title="Select background color"
+                      />
+                    </div>
+                    <div className="flex-1 relative">
+                      <Input 
+                        type="text"
+                        value={bgColor}
+                        onChange={(e) => setBgColor(e.target.value)}
+                        className="pr-10"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => handleColorPaste(setBgColor)}
+                        title="Paste color from clipboard"
+                      >
+                        <Clipboard size={16} />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex-1 relative">
-                    <Input 
-                      type="text"
-                      value={bgColor}
-                      onChange={(e) => setBgColor(e.target.value)}
-                      className="pr-10"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full"
-                      onClick={() => handleColorPaste(setBgColor)}
-                      title="Paste color from clipboard"
-                    >
-                      <Clipboard size={16} />
-                    </Button>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Foreground Color</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="border border-input rounded overflow-hidden">
+                      <input
+                        type="color"
+                        value={fgColor}
+                        onChange={(e) => setFgColor(e.target.value)}
+                        className="w-12 h-12 rounded cursor-pointer"
+                        title="Select foreground color"
+                      />
+                    </div>
+                    <div className="flex-1 relative">
+                      <Input 
+                        type="text"
+                        value={fgColor}
+                        onChange={(e) => setFgColor(e.target.value)}
+                        className="pr-10"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                        onClick={() => handleColorPaste(setFgColor)}
+                        title="Paste color from clipboard"
+                      >
+                        <Clipboard size={16} />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
               
+              {/* Size Slider */}
               <div className="space-y-2">
-                <Label>Foreground Color</Label>
-                <div className="flex items-center gap-2">
-                  <div className="border border-input rounded overflow-hidden">
-                    <input
-                      type="color"
-                      value={fgColor}
-                      onChange={(e) => setFgColor(e.target.value)}
-                      className="w-12 h-12 rounded cursor-pointer"
-                      title="Select foreground color"
-                    />
-                  </div>
-                  <div className="flex-1 relative">
-                    <Input 
-                      type="text"
-                      value={fgColor}
-                      onChange={(e) => setFgColor(e.target.value)}
-                      className="pr-10"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-full"
-                      onClick={() => handleColorPaste(setFgColor)}
-                      title="Paste color from clipboard"
-                    >
-                      <Clipboard size={16} />
-                    </Button>
-                  </div>
+                <div className="flex justify-between">
+                  <Label htmlFor="qr-size">Size: {size}px</Label>
                 </div>
+                <Slider
+                  id="qr-size"
+                  value={[size]}
+                  min={100}
+                  max={300}
+                  step={10}
+                  onValueChange={(value) => setSize(value[0])}
+                />
               </div>
-            </div>
-            
-            {/* Size Slider */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="qr-size">Size: {size}px</Label>
-              </div>
-              <Slider
-                id="qr-size"
-                value={[size]}
-                min={100}
-                max={300}
-                step={10}
-                onValueChange={(value) => setSize(value[0])}
-              />
-            </div>
 
-            {/* Padding Slider (previously Border) */}
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <Label htmlFor="qr-border">Padding: {borderSize}px</Label>
+              {/* Padding Slider (previously Border) */}
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="qr-border">Padding: {borderSize}px</Label>
+                </div>
+                <Slider
+                  id="qr-border"
+                  value={[borderSize]}
+                  min={0}
+                  max={50}
+                  step={1}
+                  onValueChange={(value) => setBorderSize(value[0])}
+                />
               </div>
-              <Slider
-                id="qr-border"
-                value={[borderSize]}
-                min={0}
-                max={50}
-                step={1}
-                onValueChange={(value) => setBorderSize(value[0])}
-              />
             </div>
-          </div>
+          )}
         </div>
 
         {/* QR Code and download button - second column for desktop only */}
