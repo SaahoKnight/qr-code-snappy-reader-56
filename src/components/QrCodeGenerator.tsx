@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
@@ -697,21 +696,13 @@ const QrCodeGenerator = () => {
             </div>
           )}
 
-          {/* Download Button with Format Selection */}
+          {/* Download Button with Format Selection - moved format selection to left */}
           <div className="w-full max-w-[300px]">
             <DropdownMenu>
               <div className="flex">
-                <Button 
-                  onClick={handleDownload} 
-                  className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
-                  disabled={!text || isTextTooLong || qrError}
-                >
-                  <Download size={18} />
-                  Download
-                </Button>
                 <DropdownMenuTrigger asChild>
                   <Button 
-                    className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
+                    className="px-2 rounded-r-none"
                     variant="default"
                     disabled={!text || isTextTooLong || qrError}
                   >
@@ -722,6 +713,14 @@ const QrCodeGenerator = () => {
                     <ChevronDown size={16} />
                   </Button>
                 </DropdownMenuTrigger>
+                <Button 
+                  onClick={handleDownload} 
+                  className="flex-1 flex items-center justify-center gap-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
+                  disabled={!text || isTextTooLong || qrError}
+                >
+                  <Download size={18} />
+                  Download
+                </Button>
               </div>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setDownloadFormat('png')}>
