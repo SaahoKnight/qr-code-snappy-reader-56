@@ -1,10 +1,11 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle, Palette, SlidersHorizontal, FileEdit, Mail, Phone, User } from 'lucide-react';
+import { Download, ChevronDown, Clipboard, Image, FileText, FileImage, FileCode, AlertTriangle, Palette, SlidersHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -17,7 +18,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Textarea } from '@/components/ui/textarea';
 import ColorDialog from './ColorDialog';
 import SizeDialog from './SizeDialog';
-import QrTypeDialog, { QrCodeType } from './QrTypeDialog';
 
 const QrCodeGenerator = () => {
   const isMobile = useIsMobile();
@@ -35,23 +35,6 @@ const QrCodeGenerator = () => {
   const [qrError, setQrError] = useState(false);
   const [scaleFactor, setScaleFactor] = useState(1);
   const MAX_CHARS = 2048; // QR code text capacity limit
-  
-  // New state for QR code type
-  const [qrType, setQrType] = useState<QrCodeType>('text');
-  const [qrTypeDialogOpen, setQrTypeDialogOpen] = useState(false);
-  
-  // Contact info states
-  const [contactName, setContactName] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  
-  // Email states
-  const [emailAddress, setEmailAddress] = useState('');
-  const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState('');
-  
-  // Phone state
-  const [phoneNumber, setPhoneNumber] = useState('');
   
   // Dialog states
   const [colorDialogOpen, setColorDialogOpen] = useState(false);
@@ -87,62 +70,6 @@ const QrCodeGenerator = () => {
   // Reset error state when text changes
   const resetErrorState = () => {
     setQrError(false);
-  };
-
-  // Format the QR code content based on type
-  const getFormattedQrContent = (): string => {
-    switch (qrType) {
-      case 'url':
-        return text;
-      case 'contact':
-        // Use vCard format for contact info
-        return `BEGIN:VCARD
-VERSION:3.0
-FN:${contactName}
-TEL:${contactPhone}
-EMAIL:${contactEmail}
-END:VCARD`;
-      case 'email':
-        // Format for email QR code
-        return `mailto:${emailAddress}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      case 'phone':
-        // Format for phone QR code
-        return `tel:${phoneNumber}`;
-      default:
-        return text;
-    }
-  };
-
-  // Get icon for the current QR type
-  const getQrTypeIcon = () => {
-    switch (qrType) {
-      case 'url':
-        return <FileCode size={16} />;
-      case 'contact':
-        return <User size={16} />;
-      case 'email':
-        return <Mail size={16} />;
-      case 'phone':
-        return <Phone size={16} />;
-      default:
-        return <FileEdit size={16} />;
-    }
-  };
-
-  // Get display name for the current QR type
-  const getQrTypeName = (): string => {
-    switch (qrType) {
-      case 'url':
-        return 'URL';
-      case 'contact':
-        return 'Contact';
-      case 'email':
-        return 'Email';
-      case 'phone':
-        return 'Phone';
-      default:
-        return 'Text';
-    }
   };
 
   const handlePasteFromClipboard = async () => {
@@ -218,12 +145,10 @@ END:VCARD`;
   };
 
   const handleDownload = () => {
-    const content = getFormattedQrContent();
-    
-    if (!content) {
+    if (!text) {
       toast({
         title: 'No content to generate',
-        description: 'Please enter some content to generate a QR code',
+        description: 'Please enter some text to generate a QR code',
         variant: 'destructive',
       });
       return;
@@ -232,7 +157,7 @@ END:VCARD`;
     if (isTextTooLong || qrError) {
       toast({
         title: 'Cannot generate QR code',
-        description: 'The content is too complex for a QR code. Please reduce content length or complexity.',
+        description: 'The text is too complex for a QR code. Please reduce text length or complexity.',
         variant: 'destructive',
       });
       return;
@@ -409,12 +334,10 @@ END:VCARD`;
 
   // Enhanced renderQrCode function to catch errors
   const renderQrCode = () => {
-    const content = getFormattedQrContent();
-    
-    if (!content) {
+    if (!text) {
       return (
         <div className="flex items-center justify-center bg-gray-100" style={{ width: size, height: size }}>
-          <p className="text-sm text-gray-400">Enter content to generate QR</p>
+          <p className="text-sm text-gray-400">Enter text to generate QR</p>
         </div>
       );
     }
@@ -430,7 +353,7 @@ END:VCARD`;
     try {
       return (
         <QRCodeCanvas
-          value={content}
+          value={text}
           size={size}
           bgColor={bgColor}
           fgColor={fgColor}
@@ -449,152 +372,10 @@ END:VCARD`;
         <div className="flex flex-col items-center justify-center bg-gray-100 p-4" style={{ width: size, height: size }}>
           <AlertTriangle className="text-red-500 mb-2" size={32} />
           <p className="text-sm text-gray-700 text-center">
-            Cannot generate QR code.<br/>Content is too complex.
+            Cannot generate QR code.<br/>Text is too complex.
           </p>
         </div>
       );
-    }
-  };
-
-  // Render input form based on QR code type
-  const renderInputForm = () => {
-    switch (qrType) {
-      case 'url':
-        return (
-          <div className="space-y-2">
-            <Label htmlFor="qr-url">Enter URL</Label>
-            <div className="relative">
-              <Input
-                id="qr-url"
-                placeholder="https://example.com"
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                className={`w-full pr-10 ${isTextTooLong || qrError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                onClick={handlePasteFromClipboard}
-                title="Paste from clipboard"
-              >
-                <Clipboard size={18} />
-              </Button>
-            </div>
-          </div>
-        );
-        
-      case 'contact':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="contact-name">Name</Label>
-              <Input
-                id="contact-name"
-                placeholder="John Doe"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="contact-email">Email</Label>
-              <Input
-                id="contact-email"
-                placeholder="john@example.com"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="contact-phone">Phone Number</Label>
-              <Input
-                id="contact-phone"
-                placeholder="+1234567890"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
-              />
-            </div>
-          </div>
-        );
-        
-      case 'email':
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="email-address">Email Address</Label>
-              <Input
-                id="email-address"
-                placeholder="recipient@example.com"
-                value={emailAddress}
-                onChange={(e) => setEmailAddress(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="email-subject">Subject</Label>
-              <Input
-                id="email-subject"
-                placeholder="Hello there!"
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="email-body">Message</Label>
-              <Textarea
-                id="email-body"
-                placeholder="Write your message here..."
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                rows={3}
-              />
-            </div>
-          </div>
-        );
-        
-      case 'phone':
-        return (
-          <div className="space-y-2">
-            <Label htmlFor="phone-number">Phone Number</Label>
-            <Input
-              id="phone-number"
-              placeholder="+1234567890"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
-          </div>
-        );
-        
-      default: // text
-        return (
-          <div className="space-y-2">
-            <Label htmlFor="qr-text">Enter text</Label>
-            <div className="relative">
-              <Textarea
-                id="qr-text"
-                ref={inputRef}
-                placeholder="Enter text to encode in QR code"
-                value={text}
-                onChange={handleTextChange}
-                className={`w-full pr-10 resize-none ${isTextTooLong || qrError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-                rows={3}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                onClick={handlePasteFromClipboard}
-                title="Paste from clipboard"
-              >
-                <Clipboard size={18} />
-              </Button>
-            </div>
-            <div className={`text-xs ${isTextTooLong || qrError ? 'text-red-500 font-medium' : 'text-muted-foreground'} text-right`}>
-              {text.length} / {MAX_CHARS} characters
-              {isTextTooLong && ' (text too long)'}
-              {qrError && !isTextTooLong && ' (content too complex for QR code)'}
-            </div>
-          </div>
-        );
     }
   };
 
@@ -642,24 +423,35 @@ END:VCARD`;
       <div className="flex flex-col lg:flex-row gap-8 w-full">
         {/* Input field and customization options - first column */}
         <div className="w-full lg:w-1/2 space-y-6">
-          {/* Type selection button */}
-          <div>
-            <Label className="mb-2 block">QR Code Type</Label>
-            <Button 
-              variant="outline"
-              className="w-full flex justify-between items-center"
-              onClick={() => setQrTypeDialogOpen(true)}
-            >
-              <div className="flex items-center gap-2">
-                {getQrTypeIcon()}
-                <span>{getQrTypeName()}</span>
-              </div>
-              <ChevronDown size={16} />
-            </Button>
+          {/* Input field with paste button */}
+          <div className="space-y-2">
+            <Label htmlFor="qr-text">Enter text or URL</Label>
+            <div className="relative">
+              <Textarea
+                id="qr-text"
+                ref={inputRef}
+                placeholder="Enter text or paste URL"
+                value={text}
+                onChange={handleTextChange}
+                className={`w-full pr-10 resize-none ${isTextTooLong || qrError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                rows={3}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                onClick={handlePasteFromClipboard}
+                title="Paste from clipboard"
+              >
+                <Clipboard size={18} />
+              </Button>
+            </div>
+            <div className={`text-xs ${isTextTooLong || qrError ? 'text-red-500 font-medium' : 'text-muted-foreground'} text-right`}>
+              {text.length} / {MAX_CHARS} characters
+              {isTextTooLong && ' (text too long)'}
+              {qrError && !isTextTooLong && ' (content too complex for QR code)'}
+            </div>
           </div>
-          
-          {/* Input form based on selected type */}
-          {renderInputForm()}
           
           {/* Customization Options - Only show on desktop */}
           {!isMobile && (
@@ -813,7 +605,7 @@ END:VCARD`;
                 <Button 
                   onClick={handleDownload} 
                   className="flex-1 flex items-center justify-center gap-2 rounded-r-none"
-                  disabled={!getFormattedQrContent() || isTextTooLong || qrError}
+                  disabled={!text || isTextTooLong || qrError}
                 >
                   <Download size={18} />
                   Download
@@ -822,7 +614,7 @@ END:VCARD`;
                   <Button 
                     className="px-2 rounded-l-none border-l-[1px] border-l-primary-foreground/20"
                     variant="default"
-                    disabled={!getFormattedQrContent() || isTextTooLong || qrError}
+                    disabled={!text || isTextTooLong || qrError}
                   >
                     <span className="mr-1 flex items-center gap-1">
                       {getFormatIcon()}
@@ -872,13 +664,6 @@ END:VCARD`;
         borderSize={borderSize}
         onSizeChange={setSize}
         onBorderSizeChange={setBorderSize}
-      />
-      
-      <QrTypeDialog
-        open={qrTypeDialogOpen}
-        onOpenChange={setQrTypeDialogOpen}
-        selectedType={qrType}
-        onTypeSelect={setQrType}
       />
     </div>
   );
